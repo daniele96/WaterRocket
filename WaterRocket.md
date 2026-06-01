@@ -224,5 +224,134 @@ deve restare la bottiglia PET** (il PLA/PETG stampato non è affidabile per cont
 
 ---
 
+## 13. Elettronica di bordo 🔌
+
+Sistema di telemetria + log dati + video da montare nell'**ogiva** del razzo
+(scende col paracadute passivo del kit — vedi §3 e nota sotto).
+
+### Architettura
+
+- **MCU di volo**: ESP32-S3 con camera, in ogiva
+- **Sensori I2C** sullo stesso bus: BMP280 + MPU6050
+- **Storage**: microSD per log ad alta frequenza + video
+- **Recupero**: passivo (paracadute del kit) + buzzer ritrovamento
+- **Telemetria**: WiFi/BLE live a terra (range utile ~50 m)
+
+### Board scelta: Seeed XIAO ESP32-S3 Sense
+
+| Caratteristica | Valore |
+|---|---|
+| Dimensioni / peso | 21×17,5 mm, ~3 g |
+| Camera | OV2640 2 MP (staccabile, opz. OV5640) |
+| Microfono | PDM digitale |
+| microSD slot | Sì, sulla shield camera |
+| PSRAM / Flash | 8 MB / 8 MB |
+| Carica LiPo | Sì, pad **BAT+/BAT-** da saldare |
+| Wireless | WiFi 2,4 GHz + BLE 5.0, antenna ceramica + IPEX |
+| Riferimento firmware | usata dal progetto `tritonFC` |
+
+### Sensori e funzionalità sbloccate
+
+| Sensore | Bus | Cosa abilita | Priorità |
+|---|---|---|---|
+| **BMP280** | I2C | Quota live, apogeo, profilo di volo, T/P cabina | ⭐⭐⭐ |
+| **MPU6050** | I2C | Accelerazione lancio, giroscopio (roll/yaw/pitch), rilevazione apogeo via segno accel | ⭐⭐⭐ |
+| **microSD** (slot integrato) | SPI | Log ≥100 Hz + video AVI | ⭐⭐⭐ |
+| **Camera OV2640** | DVP | Video 640×480 a 15–25 fps, foto, analisi traiettoria | ⭐⭐ |
+| **Buzzer passivo** | GPIO PWM | Beep ritrovamento + codici di stato | ⭐⭐ |
+| **LED ultra-bright** | GPIO | Visibilità slow-mo, stato armato/disarmato | ⭐ |
+| **Microfono PDM** | I2S | Acustica del getto d'acqua, evento apertura paracadute | ⭐ |
+| **RTC DS3231** (lab) | I2C | Timestamp assoluti, sincronizzazione multi-razzo | ⭐ |
+| **BH1750 / TSL2591** (lab) | I2C | Profilo luminosità lungo la traiettoria (didattico) | ⭐ |
+| **GPS NEO-M8N** | UART | Ritrovamento a distanza (≥70 m). Costa ~20 g | ⭐ opz |
+| **ADXL375 ±200 g** | I2C | Vero picco accel lancio + impatto (MPU6050 satura a ±16 g) | ⭐ opz |
+
+### Schema collegamenti minimo
+
+```
+XIAO ESP32-S3 Sense
+├── I2C (SDA/SCL)
+│   ├── BMP280   (addr 0x76 o 0x77)
+│   └── MPU6050  (addr 0x68)
+├── microSD       → slot integrato (shield camera)
+├── Camera OV2640 → FPC dedicato
+├── BAT+ / BAT-   → LiPo 1S 300–400 mAh (saldatura)
+├── GPIO          → buzzer passivo + LED
+└── USB-C         → programmazione + ricarica
+```
+
+### Sensori del lab da NON portare in volo
+
+| Sensore | Perché no | Uso alternativo |
+|---|---|---|
+| DHT11 | Risposta 2 s, volo dura ~5 s | Stazione meteo a terra |
+| MQ-135 | Preriscaldo 30 s, alto consumo | Stazione a terra |
+| LiPo 2000 mAh | ~40 g, penalizza la quota | Ground station / banco |
+
+### Posizionamento meccanico
+
+Elettronica **nell'ogiva** (verde del kit AliExpress, o sostitutiva stampata 3D più
+capiente — vedi §12). L'ogiva si stacca all'apogeo per inerzia, gli elastici cedono
+e tira fuori il paracadute; scende legata al corpo via shock cord. **Annegare PCB e
+LiPo in spugna densa** dentro un vano dedicato. LiPo **sempre fissata** con biadesivo
+o fascette, mai libera.
+
+### Architettura firmware suggerita
+
+Sposa il modello didattico "un gruppo = un sensore" con task FreeRTOS separati:
+
+```
+[Task BMP280] ─┐
+[Task MPU6050]─┼→ [Queue dati] → [Task Logger SD] + [Task Telemetria WiFi/BLE]
+[Task Camera] ─┘
+```
+
+**Firmware di riferimento (open source):**
+- **[zerneo85/ESP-Controlled-Rocket](https://github.com/zerneo85/ESP-Controlled-Rocket)** (GPL-3.0, attivo): BMP280 + MPU6050, Web UI, WebSocket live, 3D viewer, log SD. **Punto di partenza consigliato.**
+- **[MaelStudio/tritonFC](https://github.com/MaelStudio/tritonFC)**: gira nativamente su XIAO ESP32-S3 Sense, gestisce video AVI, PCB di riferimento.
+- **[nodebotsau/water-rocket](https://github.com/nodebotsau/water-rocket)** (MIT): ground station Node.js + MQTT, riusabile.
+
+---
+
+## 14. Acquisti e inventario 🛒
+
+### Hardware fisico (razzo + lanciatore)
+
+- [Kit lanciatore + paracadute AliExpress](https://it.aliexpress.com/item/1005008517820572.html)
+  — paracadute passivo a *nose-cone pop-off*, fino a ~50–70 m reali
+
+### Da acquistare (kit volante elettronica) — ~71 €
+
+| # | Articolo | Q.tà | € | Link |
+|---|---|---|---|---|
+| 1 | **Seeed XIAO ESP32-S3 Sense** | 2 | 34 | [Amazon.it ✓](https://www.amazon.it/Seeed-Studio-XIAO-ESP32S3-Sense/dp/B0C69FFVHH) |
+| 2 | **LiPo 1S 300–400 mAh JST 1.25** | 2 | 12 | [Amazon.it](https://www.amazon.it/s?k=LiPo+1S+400mAh+JST+1.25) · [AliExpress](https://it.aliexpress.com/w/wholesale-lipo-1s-400mah-jst-1.25.html) |
+| 3 | **MPU6050 / GY-521** | 2 | 8 | [Amazon.it](https://www.amazon.it/s?k=GY-521+MPU6050) · [AliExpress](https://it.aliexpress.com/w/wholesale-gy-521-mpu6050.html) |
+| 4 | **Buzzer passivo 5V** (multipack) | 1 kit | 6 | [Amazon.it](https://www.amazon.it/s?k=buzzer+passivo+5V+arduino) |
+| 5 | **Antenna IPEX 2.4 GHz** (opzionale) | 2 | 6 | [Amazon.it](https://www.amazon.it/s?k=antenna+IPEX+UFL+2.4GHz) · [Seeed ufficiale](https://www.seeedstudio.com/2-4GHz-2-81dBi-Antenna-for-XIAO-ESP32C3-p-5475.html) |
+| 6 | **LED + resistenze** (se mancanti) | 1 kit | 5 | [Amazon.it](https://www.amazon.it/s?k=led+kit+5mm+arduino) |
+| | | **Totale** | **~71 €** | |
+
+### Già in possesso (riusabile per il razzo)
+
+| Pezzo | Q.tà | Uso nel razzo |
+|---|---|---|
+| ✅ BMP280 breakout | 5 | Altimetria di volo |
+| ✅ microSD 32 GB | 5 | Log + video (slot della XIAO Sense) |
+| ✅ ESP32-S3 DevKitC-1 (DUBEUYEW) | 2 | Ground station, test a banco, kit didattici |
+| ✅ Freenove ESP32-WROVER + camera | 1 | Ground station / test pipeline camera |
+| ✅ TTGO T-Display | 1 | Display a terra per telemetria live |
+| ✅ BH1750, TSL2591 (luce) | 3 + 1 | Sensori opzionali (didattica) |
+| ✅ RTC DS3231 | 5 | Timestamp log (opzionale) |
+| ✅ LiPo 2000 mAh JST 1.25 | 4 | **Solo ground station** — troppo pesanti per volare |
+| ✅ Breadboard + jumper + USB-C | — | Prototipazione |
+| ✅ Stagno | — | Saldature (pad BAT della XIAO) |
+
+### Sensori del lab esclusi dal volo
+
+❌ DHT11, MQ-135, LiPo 2000 mAh, pannello solare — vedi §13 *"da NON portare in volo"*.
+
+---
+
 *Buoni lanci! 🚀*
 ```
