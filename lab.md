@@ -15,8 +15,10 @@ tecniche del razzo vedi [WaterRocket.md](WaterRocket.md).
 |---|---|
 | Età target | 8–14 anni |
 | Dimensione gruppi | 3–4 bambini per razzo |
-| N° gruppi tipico | 6–10 |
-| Durata totale | 2,5–3 h (incluso lancio) |
+| **N° gruppi per sessione** | **4–6** (massimo gestibile da 1 educatore in 2h) |
+| **Durata sessione** | **2 h** (incluso lancio e debrief) |
+| **Bambini per sessione** | 12–24 |
+| **Scalabilità** | Sessioni **parallele** o **sfalsate** se più bambini — vedi §10 |
 | Spazio richiesto | Aula/cortile per assemblaggio + campo aperto ≥30×30 m per lanci |
 | Supervisione adulta | **Obbligatoria** durante pressurizzazione e lancio |
 
@@ -51,27 +53,43 @@ note specifiche in §5.
 
 ---
 
-## 2. Struttura del laboratorio (4 stazioni)
+## 2. Struttura del laboratorio (sessione singola 2 h)
 
-Sequenza ~2 h, ogni stazione 25–35 min con rotazione.
+Sequenza compatta per 4–6 gruppi in 120 minuti netti.
 
 ```
-[Briefing 15']
+[Briefing iniziale]                10'
    ↓
-[Stazione 1: Pinne]    25-35'
+[Stazione 1: Pinne]                25'
    ↓
-[Stazione 2: Decoro]   25-35'
+[Stazione 2: Decoro & identità]    20'
    ↓
-[Stazione 3: Bilanciamento + Test cordicella]   20-30'
+[Stazione 3: Bilanciamento]        15'
    ↓
-[Stazione 4: Lancio]   30-45'
+[Spostamento al campo lanci]        5'
    ↓
-[Debrief + dati]       15'
+[Stazione 4: Lancio (4-6 razzi)]   35'
+   ↓
+[Debrief + dati]                   10'
+─────────────────────────────────────
+TOTALE                            120'
 ```
+
+| Fase | Durata | Note per restare nei tempi |
+|---|---|---|
+| Briefing | 10' | Cartelloni pre-pronti, demo palloncino veloce |
+| Pinne | 25' | Sagome pre-tagliate dall'organizzatore + bi-adesivo (no colla a caldo) |
+| Decoro | 20' | Stop netto allo scadere — è la fase che dilata di più |
+| Bilanciamento | 15' | Plastilina pre-pesata in bustine, test della cordicella rapido |
+| Lancio | 35' | ~6 min per razzo (riempimento + pressurizzazione + lancio + reset) |
+| Debrief | 10' | Tabella dati su lavagna, foto di gruppo |
+
+> ⚠️ **Se hai 5–6 gruppi non puoi compressare il lancio sotto i 30–35 min** senza
+> sacrificare sicurezza. Se vuoi più gruppi per sessione, vedi §10.
 
 ---
 
-## 3. Briefing iniziale (15 min)
+## 3. Briefing iniziale (10 min)
 
 Spiegazione semplice davanti a tutti i gruppi insieme:
 
@@ -87,7 +105,7 @@ Spiegazione semplice davanti a tutti i gruppi insieme:
 
 ---
 
-## 4. Stazione 1: Costruzione pinne (25–35 min)
+## 4. Stazione 1: Costruzione pinne (25 min)
 
 ### Obiettivo didattico
 I ragazzi capiscono **perché** servono le pinne (stabilità aerodinamica) e
@@ -155,7 +173,7 @@ Alternativa: cartelli politici dismessi (sono cartonplast).
 
 ---
 
-## 5. Stazione 2: Decoro e identità (25–35 min)
+## 5. Stazione 2: Decoro e identità (20 min)
 
 ### Obiettivo
 I ragazzi si "appropriano" del razzo. Massima libertà creativa **dentro le tre
@@ -181,7 +199,7 @@ regole d'oro**.
 
 ---
 
-## 6. Stazione 3: Bilanciamento + Test della cordicella (20–30 min)
+## 6. Stazione 3: Bilanciamento + Test della cordicella (15 min)
 
 ### Obiettivo
 Far scoprire ai ragazzi il concetto di **baricentro** e di **stabilità**
@@ -207,7 +225,7 @@ dietro*.
 
 ---
 
-## 7. Stazione 4: Lancio (30–45 min, all'aperto)
+## 7. Stazione 4: Lancio (35 min, all'aperto)
 
 ### Setup sicurezza
 - **Area di lancio recintata** con coni o nastro: raggio minimo **10 m**, idealmente 15.
@@ -257,7 +275,7 @@ Su lavagna o foglio condiviso:
 
 ---
 
-## 8. Debrief finale (15 min)
+## 8. Debrief finale (10 min)
 
 - Quale razzo è andato più in alto? **Perché?** (poca acqua / più pressione /
   pinne grandi / più zavorra…)
@@ -296,7 +314,85 @@ diventa un piccolo metodo scientifico.
 
 ---
 
-## 10. Variante avanzata (per ragazzi più grandi, 12+)
+## 10. Scalabilità: sessioni parallele e sfalsate 🔁
+
+Una sessione singola da 2 h gestisce **12–24 bambini** (4–6 gruppi). Per numeri
+maggiori esistono **due strategie**, eventualmente combinabili.
+
+### 📊 Dimensionamento rapido
+
+| Bambini totali | Strategia consigliata | Educatori | Lanciatori |
+|---|---|---|---|
+| ≤24 | 1 sessione singola | 1 + 1 al lancio | 1 |
+| 25–48 | **2 sessioni parallele** o **2 sfalsate** | 2 + 1 al lancio | 1–2 |
+| 49–72 | **3 sessioni parallele** sfalsate sul lancio | 3 + 1 al lancio | 1–2 |
+| 73–100 | **3–4 parallele** + 2 lanciatori | 4 + 2 al lancio | 2 |
+| >100 | Spezza in più turni nella giornata (mattina/pomeriggio) | scala linearmente | ≥2 |
+
+### Strategia A — Sessioni **parallele** (tante stanze, lancio sfalsato)
+
+Più sessioni partono **insieme** in stanze/aree diverse, ognuna con il proprio
+educatore. **Il lancio è il collo di bottiglia** perché serve un solo lanciatore
+sicuro a vista.
+
+```
+Tempo  →   0    10   30   50   65   70  105   115  120 min
+Sess. A   [Br] [Pin] [Dec] [Bil] [→] [LANCIO 35'] [Deb]
+Sess. B   [Br] [Pin] [Dec] [Bil] [→] [attesa  ] [LANCIO 35'] ← sfalsata di 35'
+```
+
+**Quando funziona bene:**
+- Hai più stanze/zone separate per assemblaggio
+- Hai 1 educatore per sessione + 1 dedicato al lancio
+- 1 solo lanciatore va bene (il bottleneck si sfalsa)
+
+**Adattamento per 2 sessioni parallele:**
+- Sessione A briefing alle 9:00 → lancio alle 10:25
+- Sessione B briefing alle 9:00 → bilanciamento più lungo → lancio alle 11:00
+- O più semplicemente: **partenza sfalsata di 30–40 min** (vedi Strategia B)
+
+### Strategia B — Sessioni **sfalsate** (stesso spazio, partenze scaglionate)
+
+Le sessioni si succedono ogni 30–40 min sullo stesso spazio fisico. Quando A è
+al lancio, B sta finendo bilanciamento, C inizia il briefing.
+
+```
+Tempo  →   0     30    60     90    120   150   180 min
+Sess. A   [-------Sess. A 2h------]
+Sess. B            [-------Sess. B 2h------]
+Sess. C                    [-------Sess. C 2h------]
+```
+
+**Pro:** richiede meno spazio (1 area) e meno lanciatori (1 condiviso).
+**Contro:** richiede più ore in totale e personale che ruota.
+
+### Risorse — cosa duplicare per sessione parallela
+
+| Risorsa | Per sessione | Condivisibile? | Note |
+|---|---|---|---|
+| Educatore principale | 1 | ❌ | 1 per sessione |
+| Educatore al lancio | — | ✅ | 1 dedicato per tutto l'evento |
+| **Lanciatore (kit AliExpress)** | — | ✅ se sfalsate | 1 ogni 1–2 sessioni in parallelo |
+| Pompa con manometro | 1 per lanciatore | ❌ | |
+| Tavolo lavoro | 1 per gruppo | ❌ | 4–6 per sessione |
+| Sagome pinne / striscia carta | 1 per gruppo | ❌ | Stampa in massa |
+| Plastilina porzionata | 1 set per gruppo | ❌ | Pre-pesata a casa |
+| Bottiglie PET di scorta | 2–3 per sessione | ❌ | Se senza paracadute, anche di più |
+
+### Costo aggiuntivo per ogni lanciatore extra
+
+Acquistando un secondo kit AliExpress: ~40 € (solo il lanciatore, le decorazioni
+e il paracadute restano disponibili come scorta).
+
+### ⏰ Briefing iniziale condiviso (ottimizzazione)
+
+Se hai 2–3 sessioni che partono insieme, **fai un briefing comune di 15 min**
+con tutti i bambini riuniti (cartelloni grandi, demo unica). Risparmi 10 min per
+sessione e crei "evento corale" all'inizio. Poi i gruppi si dividono nelle aule.
+
+---
+
+## 11. Variante avanzata (per ragazzi più grandi, 12+)
 
 Aggiungere una **5ª stazione opzionale di elettronica**:
 - 1 razzo "spia" con XIAO ESP32-S3 Sense in ogiva (vedi [WaterRocket.md §13](WaterRocket.md))
