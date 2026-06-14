@@ -18,6 +18,7 @@ tecniche del razzo vedi [WaterRocket.md](WaterRocket.md).
 | **N° gruppi per sessione** | **4–6** (massimo gestibile da 1 educatore in 2h) |
 | **Durata sessione** | **2 h** (incluso lancio e debrief) |
 | **Bambini per sessione** | 12–24 |
+| **Lanci per razzo** | **1–2** (un lancio principale, eventuale bis se c'è tempo) |
 | **Scalabilità** | Sessioni **parallele** o **sfalsate** se più bambini — vedi §10 |
 | Spazio richiesto | Aula/cortile per assemblaggio + campo aperto ≥30×30 m per lanci |
 | Supervisione adulta | **Obbligatoria** durante pressurizzazione e lancio |
@@ -40,7 +41,8 @@ note specifiche in §5.
 
 | Materiale | Quantità per gruppo | Note |
 |---|---|---|
-| **Foglio polipropilene corex 2–3 mm** | Mezzo foglio A3 | Per pinne — vedi §4 |
+| **Cartone ondulato da imballo** | 1 scatola A4 | Per pinne — riciclato, gratis (vedi §4) |
+| **Nastro da pacchi trasparente** (larghezza 5 cm) | 1 rotolo condiviso | Laminatura pinne (impermeabilizzazione) |
 | **Sagome pinne stampate** | 3 modelli (S/M/L) | Cartamodello pre-disegnato |
 | **Striscia di carta** 3×35 cm + matita | 1 | Per metodo della striscia (vedi §4) — adattabile a qualsiasi bottiglia |
 | **Washi tape colorato** | 2–3 rotoli | Decoro corpo |
@@ -48,8 +50,7 @@ note specifiche in §5.
 | **Bi-adesivo schiumoso (foam tape)** | 1 striscia 30 cm | Incollaggio pinne, sicuro |
 | **Plastilina pre-pesata** | Bustine da 10 / 20 / 30 g | Zavorra ogiva |
 | **Spago + nastro** | 1 m | Per test della cordicella |
-| **Forbici a punta tonda** | 2–3 | Sicurezza bambini |
-| **Cutter di sicurezza** | 1 (solo adulto) | Per polipropilene |
+| **Forbici a punta tonda** | 2–3 | Sicurezza bambini, tagliano anche il cartone |
 
 ---
 
@@ -148,28 +149,52 @@ una trottola. L'anello guida lo previene.
 
 ### Materiale pinne: quale scegliere
 
-**Raccomandato: polipropilene corex (cartonplast) 2–3 mm**
+**Raccomandato: cartone ondulato da imballo + nastro da pacchi trasparente**
 
-| Materiale | Peso | Acqua-resistente | Taglio bambini | Riusabile | Costo | Voto |
-|---|---|---|---|---|---|---|
-| **Polipropilene corex 2-3 mm** ⭐ | Ottimo | Sì | ✅ con cutter sicuro (adulto) | Sì | ~3 €/foglio | **Migliore** |
-| Depron / foamboard 3 mm | Eccellente | No (si rovina umido) | ✅ forbici | Limitato | ~5 €/foglio | Ottimo ma fragile |
-| Cartoncino 500 g/m² laminato con scotch | Buono | Sì (laminato) | ✅ forbici | No | ~1 € | Per bambini piccoli |
-| Plastica da fondo di bottiglia PET | Eccellente | Sì | ⚠️ bordi taglienti | Sì | Gratis | Tecnicamente buono ma laborioso |
-| Balsa / compensato 1-2 mm | Buono | No | ❌ servono adulti | Sì | Medio | Look pro, solo ragazzi grandi |
-| Gomma crepla / EVA foam | Pessimo | Sì | ✅ | No | Basso | ❌ **flette in volo, scartare** |
-| PLA stampato 3D | Buono | Sì | N/A (pre-stampato) | Sì | Variabile | Toglie la STEM-activity, perde senso |
+Costo zero (cartone riciclato da scatole Amazon/spesa), taglio gestibile dai
+bambini con le forbici, decorabilità massima. Il nastro da pacchi sigilla
+fronte/retro la pinna rendendola **impermeabile**, e diventa esso stesso un
+mini-step didattico ("impermeabilizzazione, come i tetti e le navi").
 
-**Perché il corex vince per questo lab:**
-- Resiste all'acqua (water rocket = gocce ovunque, anche prima del lancio)
-- Robusto agli impatti (un razzo cade, le pinne in corex sopravvivono)
-- Riusabile per più lanci/eventi
-- I fogli A3 colorati esistono già in cancelleria
-- Taglio facile col cutter (lo fa l'adulto in 30 secondi a foglio, oppure si
-  pre-tagliano sagome grezze prima del lab e i ragazzi rifiniscono con forbici)
+#### Procedura laminatura pinne (5 min/gruppo, integrata nella stazione)
 
-**Acquisto:** "pannelli forex/corex" su Amazon.it o ferramenta. ~3–5 €/foglio A3.
-Alternativa: cartelli politici dismessi (sono cartonplast).
+1. Ritaglia la pinna in cartone seguendo la sagoma stampata.
+2. Adagia la pinna su una striscia di **nastro da pacchi trasparente** larga 5 cm.
+3. Risvolta il nastro sopra la pinna → entrambi i lati sigillati.
+4. Rifila l'eccedenza di nastro con le forbici.
+
+Risultato: pinna impermeabile, lucida, riusabile per 5–10 lanci — più che
+sufficiente visto che ogni razzo farà **1–2 lanci** soltanto. La laminatura
+resta comunque consigliata per gestire gli schizzi inevitabili durante riempimento
+e pressurizzazione, e per atterraggi su erba bagnata.
+
+#### Confronto materiali
+
+| Materiale | Acqua-resistente | Taglio bambini | Costo | Riusabile | Voto |
+|---|---|---|---|---|---|
+| **Cartone ondulato + nastro pacchi** ⭐ | Sì (laminato) | ✅ forbici | **Gratis** | 5–10 lanci | **Migliore per il lab** |
+| Polipropilene corex 2-3 mm | Sì nativo | ⚠️ cutter (adulto) | 3–5 €/foglio A3 | 30+ lanci | Ottimo se evento ricorrente |
+| Depron / foamboard 3 mm | No (si rovina umido) | ✅ forbici | ~5 €/foglio | Limitato | Leggero ma fragile |
+| Cartoncino 500 g/m² laminato | Sì (laminato) | ✅ forbici | ~1 € | 1–2 lanci | Per bambini piccoli |
+| Plastica da fondo bottiglia PET | Sì nativo | ⚠️ bordi taglienti | Gratis | Sì | Laborioso |
+| Balsa / compensato 1-2 mm | No | ❌ adulti | Medio | Sì | Look pro, ragazzi grandi |
+| Gomma crepla / EVA foam | Sì | ✅ | Basso | No | ❌ **flette in volo, scartare** |
+| PLA stampato 3D | Sì | N/A | Variabile | Sì | Toglie la STEM-activity |
+
+**Perché il cartone vince per il lab dei bambini:**
+- **Costo zero** → scala a qualunque numero di partecipanti senza incidere sul budget
+- **Taglio con forbici** → autonomia dei bambini, niente adulti dedicati al cutter
+- **Decorabilità totale** → tempera, pastelli, pennarelli, gessetti, di tutto prima della laminatura
+- **Storia ecologica** → "stiamo riciclando una scatola Amazon per costruire un razzo"
+- La **laminatura diventa un mini-laboratorio di impermeabilizzazione**
+
+**Quando preferire il polipropilene corex**: se prevedi di riusare le stesse
+pinne in più eventi nell'anno, o vuoi un look uniforme e "professionale". Il
+corex resta valido come alternativa, soprattutto per la **variante avanzata**
+(§11) con razzi strumentati che faranno decine di lanci.
+
+**Reperimento del cartone**: scatole Amazon/spesa/scarpe. Privilegia cartone
+**a singola onda**, spesso 2–3 mm — più rigido e leggero del doppia onda.
 
 ---
 
@@ -234,6 +259,14 @@ dietro*.
 - **Pressione massima 5 bar** in contesto bambini (il manuale del kit dichiara di più,
   ma 5 bar = già 40-50 m di quota e impatti gestibili).
 - **Vento massimo 15 km/h** — oltre, il razzo deriva troppo.
+
+### Lanci per razzo
+
+Ogni razzo va lanciato **1 volta** come obiettivo principale; un **secondo lancio**
+("bis") è previsto solo se la sessione è in anticipo sui tempi e tutti i gruppi
+hanno già completato il primo. Questo semplifica la pianificazione, riduce
+l'usura del materiale e mantiene il **lancio come momento speciale**, non come
+attività ripetitiva.
 
 ### Procedura standard per ogni lancio
 1. Gruppo presenta il proprio razzo (nome, decoro) — momento "spettacolo".
