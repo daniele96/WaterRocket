@@ -7,9 +7,10 @@
 
 #include "board_pins.h"
 
-// Risoluzione/qualità: VGA a qualità 12 dà ~20-40 KB per frame,
-// sostenibile su SD via SPI. Per più dettaglio prova FRAMESIZE_SVGA/HD.
-static constexpr framesize_t FRAME_SIZE = FRAMESIZE_VGA;
+// Risoluzione/qualità. Misurato su OV3660 (comando seriale 'b'): fino a SVGA
+// la camera dà ~28 fps, HD ~17, UXGA ~14; la SD (~1.7 MB/s) non è il limite.
+// SVGA a qualità 12 = ~19 KB per frame.
+static constexpr framesize_t FRAME_SIZE = FRAMESIZE_SVGA;
 static constexpr int JPEG_QUALITY = 12;  // 0-63, più basso = migliore
 static constexpr uint32_t FLUSH_MS = 1000;
 

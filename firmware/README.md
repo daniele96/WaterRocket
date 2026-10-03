@@ -17,7 +17,7 @@ sulla microSD, in una cartella nuova per ogni sessione: `/REC_0001/`, `/REC_0002
 
 | File          | Contenuto                                              |
 |---------------|--------------------------------------------------------|
-| `video.mjpeg` | frame JPEG concatenati (VGA 640×480)                    |
+| `video.mjpeg` | frame JPEG concatenati (SVGA 800×600, ~28 fps)          |
 | `frames.csv`  | indice frame con timestamp in ms dall'inizio           |
 | `audio.wav`   | audio mono 16 kHz / 16 bit                             |
 | `info.txt`    | riepilogo: frame, durata, fps medi, errori             |
