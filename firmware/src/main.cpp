@@ -1,11 +1,26 @@
-#include <Arduino.h>
+// Water Rocket - registratore di volo per XIAO ESP32S3 Sense
+//
+// Registra video (MJPEG) e audio (WAV) sulla microSD in /REC_xxxx/.
+// Avvio/stop: pulsante BOOT oppure comandi seriali:
+//   r = avvia, s = ferma, i = info, l = elenca file,
+//   h = aiuto, F = formatta SD (con conferma)
+//
+// Nota: il LED utente (GPIO21) non si usa perché condivide il pin con il CS della SD.
 
-// XIAO ESP32S3: LED utente arancione su GPIO21, attivo BASSO.
-// Nota: sulla scheda Sense GPIO21 è anche il CS della microSD,
-// quindi quando userai la SD non usare il LED.
-static constexpr uint8_t PIN_LED = LED_BUILTIN;
-static constexpr uint32_t BLINK_MS = 500;
-static constexpr uint32_t HEARTBEAT_MS = 2000;
+#include <Arduino.h>
+#include <SD.h>
+
+#include "audio_rec.h"
+#include "board_pins.h"
+#include "camera_rec.h"
+#include "storage.h"
+
+// true = inizia a registrare appena acceso (utile sul razzo, senza PC)
+static constexpr bool AUTO_RECORD = false;
+static constexpr uint32_t STATUS_MS = 2000;
+static constexpr uint32_t DEBOUNCE_MS = 50;
+
+static String s_sessionDir;
 
 static void printChipInfo() {
   Serial.println();
@@ -25,11 +40,147 @@ static void printChipInfo() {
   Serial.printf("SDK:       %s\n", ESP.getSdkVersion());
   Serial.printf("Arduino:   %d.%d.%d\n", ESP_ARDUINO_VERSION_MAJOR,
                 ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH);
+  Serial.printf("Camera:    %s\n", CameraRec::isReady() ? CameraRec::sensorName() : "non inizializzata");
+  Serial.printf("Microfono: %s\n", AudioRec::isReady() ? "ok" : "non inizializzato");
+  Storage::printInfo();
+}
+
+static void printHelp() {
+  Serial.println("Comandi: r = avvia registrazione, s = ferma, i = info, h = aiuto");
+  Serial.println("         l = elenca file su SD, F = formatta SD in FAT32 (chiede conferma)");
+  Serial.println("Pulsante BOOT: avvia/ferma registrazione");
+}
+
+static bool isRecording() { return CameraRec::isRunning() || AudioRec::isRunning(); }
+
+static void startRecording() {
+  if (isRecording()) return;
+  // La SD potrebbe essere stata inserita dopo l'avvio: riprova a montarla
+  if (!Storage::isMounted() && !Storage::begin()) {
+    Serial.println("Impossibile registrare: SD non montata (inserita? formattata FAT32?)");
+    return;
+  }
+  s_sessionDir = Storage::newSessionDir();
+  if (s_sessionDir.isEmpty()) {
+    Serial.println("Impossibile creare la cartella di sessione");
+    return;
+  }
+  const bool cam = CameraRec::start(s_sessionDir);
+  const bool mic = AudioRec::start(s_sessionDir);
+  Serial.printf(">> REC avviata in %s (video: %s, audio: %s)\n", s_sessionDir.c_str(),
+                cam ? "si" : "no", mic ? "si" : "no");
+}
+
+static void stopRecording() {
+  if (!isRecording()) return;
+  CameraRec::stop();
+  AudioRec::stop();
+
+  const uint32_t frames = CameraRec::frames();
+  const float secs = CameraRec::elapsedMs() / 1000.0f;
+  const float fps = secs > 0 ? frames / secs : 0;
+
+  // Riepilogo della sessione, utile per convertire il video con il giusto framerate
+  File info = SD.open(s_sessionDir + "/info.txt", FILE_WRITE);
+  if (info) {
+    info.printf("camera=%s\nframes=%lu\nduration_s=%.2f\nfps=%.2f\naudio_s=%.2f\n",
+                CameraRec::sensorName(), (unsigned long)frames, secs, fps, AudioRec::seconds());
+    info.printf("errors_video=%lu\nerrors_audio=%lu\n", (unsigned long)CameraRec::errors(),
+                (unsigned long)AudioRec::errors());
+    info.close();
+  }
+
+  Serial.printf(">> REC fermata: %lu frame in %.1f s (%.1f fps), audio %.1f s\n",
+                (unsigned long)frames, secs, fps, AudioRec::seconds());
+  Serial.printf("   Converti con: ffmpeg -framerate %.1f -i video.mjpeg -i audio.wav "
+                "-c:v libx264 -pix_fmt yuv420p -c:a aac -shortest volo.mp4\n", fps);
+}
+
+static void toggleRecording() {
+  if (isRecording()) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+static void handleButton() {
+  static bool lastStable = HIGH;
+  static bool lastRead = HIGH;
+  static uint32_t lastChange = 0;
+
+  const bool now = digitalRead(BTN_PIN_BOOT);
+  if (now != lastRead) {
+    lastRead = now;
+    lastChange = millis();
+  }
+  if (millis() - lastChange >= DEBOUNCE_MS && now != lastStable) {
+    lastStable = now;
+    if (now == LOW) toggleRecording();  // fronte di pressione
+  }
+}
+
+static void formatCard() {
+  if (isRecording()) {
+    Serial.println("Ferma prima la registrazione");
+    return;
+  }
+  Serial.println("Formattazione SD in FAT32... (può richiedere fino a un minuto)");
+  if (Storage::format()) {
+    Serial.println("SD pronta");
+    Storage::printInfo();
+  } else {
+    Serial.println("Formattazione fallita");
+  }
+}
+
+static void handleSerial() {
+  // Il formato richiede conferma: 'F' arma, poi 'Y' entro 15 s
+  static uint32_t formatArmedAt = 0;
+
+  while (Serial.available()) {
+    const char c = Serial.read();
+    if (formatArmedAt && millis() - formatArmedAt > 15000) formatArmedAt = 0;
+    if (formatArmedAt && c != '\r' && c != '\n') {
+      formatArmedAt = 0;
+      if (c == 'Y') {
+        formatCard();
+      } else {
+        Serial.println("Formattazione annullata");
+      }
+      continue;
+    }
+    switch (c) {
+      case 'r': case 'R': startRecording(); break;
+      case 's': case 'S': stopRecording(); break;
+      case 'i': case 'I': printChipInfo(); break;
+      case 'l': case 'L': Storage::listFiles(); break;
+      case 'h': case 'H': case '?': printHelp(); break;
+      case 'F':
+        Serial.println("ATTENZIONE: se la SD non è FAT (es. exFAT) verrà formattata e");
+        Serial.println("tutti i dati andranno persi. Invia 'Y' (maiuscola) entro 15 s per confermare.");
+        formatArmedAt = millis();
+        break;
+      default: break;
+    }
+  }
+}
+
+static void printStatus() {
+  if (isRecording()) {
+    const float secs = CameraRec::elapsedMs() / 1000.0f;
+    Serial.printf("[REC %s] %6.1f s | video %lu frame (%.1f fps, err %lu) | audio %.1f s\n",
+                  s_sessionDir.c_str(), secs, (unsigned long)CameraRec::frames(),
+                  secs > 0 ? CameraRec::frames() / secs : 0.0f,
+                  (unsigned long)CameraRec::errors(), AudioRec::seconds());
+  } else {
+    Serial.printf("[%8lu ms] in attesa - premi BOOT o invia 'r' per registrare (h = aiuto)\n",
+                  (unsigned long)millis());
+  }
 }
 
 void setup() {
-  pinMode(PIN_LED, OUTPUT);
-  digitalWrite(PIN_LED, HIGH);  // spento
+  pinMode(BTN_PIN_BOOT, INPUT_PULLUP);
 
   Serial.begin(115200);
   // USB CDC: aspetta fino a 3 s che si apra il monitor seriale
@@ -38,32 +189,24 @@ void setup() {
     delay(10);
   }
 
+  Storage::begin();
+  CameraRec::begin();
+  AudioRec::begin();
+
   printChipInfo();
+  printHelp();
+
+  if (AUTO_RECORD) startRecording();
 }
 
 void loop() {
-  static uint32_t lastToggle = 0;
-  static bool ledOn = false;
+  handleButton();
+  handleSerial();
 
-  if (millis() - lastToggle >= BLINK_MS) {
-    lastToggle = millis();
-    ledOn = !ledOn;
-    digitalWrite(PIN_LED, ledOn ? LOW : HIGH);
+  static uint32_t lastStatus = 0;
+  if (millis() - lastStatus >= STATUS_MS) {
+    lastStatus = millis();
+    printStatus();
   }
-
-  // Heartbeat periodico: utile perché il messaggio di avvio si perde
-  // se il monitor seriale si collega dopo il reset
-  static uint32_t lastBeat = 0;
-  if (millis() - lastBeat >= HEARTBEAT_MS) {
-    lastBeat = millis();
-    Serial.printf("[%8lu ms] alive - heap %lu KB, PSRAM libera %lu KB (Invio = info chip)\n",
-                  (unsigned long)millis(), (unsigned long)(ESP.getFreeHeap() / 1024),
-                  (unsigned long)(ESP.getFreePsram() / 1024));
-  }
-
-  // Qualsiasi carattere ricevuto ristampa le info del chip
-  if (Serial.available()) {
-    while (Serial.available()) Serial.read();
-    printChipInfo();
-  }
+  delay(5);
 }
