@@ -7,6 +7,7 @@
 #include <esp_camera.h>
 
 #include "audio_rec.h"
+#include "avi_export.h"
 #include "camera_rec.h"
 #include "storage.h"
 #include "web_page.h"
@@ -123,6 +124,15 @@ static void handleFile() {
   f.close();
 }
 
+static void handleAvi() {
+  const String dir = s_server.arg("dir");
+  if (!isSafePath(dir) || dir.indexOf('/', 1) >= 0) {
+    s_server.send(400, "text/plain", "cartella non valida");
+    return;
+  }
+  AviExport::stream(s_server, dir);
+}
+
 static void handleDelete() {
   const String dir = s_server.arg("dir");
   if (!isSafePath(dir) || dir.indexOf('/', 1) >= 0) {
@@ -198,6 +208,7 @@ bool begin(const RecorderHooks &hooks) {
   s_server.on("/api/rec/stop", HTTP_POST, handleRecStop);
   s_server.on("/api/delete", HTTP_POST, handleDelete);
   s_server.on("/file", HTTP_GET, handleFile);
+  s_server.on("/avi", HTTP_GET, handleAvi);
   s_server.on("/snapshot.jpg", HTTP_GET, handleSnapshot);
   s_server.onNotFound([] { s_server.send(404, "text/plain", "non trovato"); });
   s_server.begin();

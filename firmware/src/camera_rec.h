@@ -14,6 +14,10 @@ bool start(const String &dir);
 // Ferma il task e chiude i file (bloccante finché i file sono chiusi).
 void stop();
 
+// Misura gli fps reali a ogni risoluzione e stima il limite imposto dalla SD
+// (sdBytesPerSec = velocità di scrittura misurata). Solo a registrazione ferma.
+void benchmark(uint32_t sdBytesPerSec);
+
 bool isRunning();
 uint32_t frames();
 uint32_t errors();

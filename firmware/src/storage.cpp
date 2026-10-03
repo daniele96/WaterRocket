@@ -65,6 +65,34 @@ void printInfo() {
                 (SD.totalBytes() - SD.usedBytes()) / (1024 * 1024));
 }
 
+uint32_t writeSpeedTest() {
+  if (!s_mounted) return 0;
+  static const char *path = "/speedtest.bin";
+  constexpr size_t CHUNK = 32 * 1024;  // simile a un frame VGA/HD
+  constexpr size_t TOTAL = 4 * 1024 * 1024;
+  uint8_t *buf = static_cast<uint8_t *>(ps_malloc(CHUNK));
+  if (!buf) return 0;
+  memset(buf, 0xA5, CHUNK);
+
+  File f = SD.open(path, FILE_WRITE);
+  if (!f) {
+    free(buf);
+    return 0;
+  }
+  const uint32_t t0 = millis();
+  size_t written = 0;
+  while (written < TOTAL) {
+    const size_t w = f.write(buf, CHUNK);
+    if (w != CHUNK) break;
+    written += w;
+  }
+  f.close();
+  const uint32_t ms = millis() - t0;
+  SD.remove(path);
+  free(buf);
+  return written == TOTAL && ms ? (uint32_t)((uint64_t)TOTAL * 1000 / ms) : 0;
+}
+
 void listFiles() {
   if (!s_mounted) {
     Serial.println("SD non montata");

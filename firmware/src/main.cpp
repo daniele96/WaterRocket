@@ -52,7 +52,8 @@ static void printChipInfo() {
 
 static void printHelp() {
   Serial.println("Comandi: r = avvia registrazione, s = ferma, i = info, h = aiuto");
-  Serial.println("         l = elenca file su SD, F = formatta SD in FAT32 (chiede conferma)");
+  Serial.println("         l = elenca file su SD, b = benchmark fps/SD");
+  Serial.println("         F = formatta SD in FAT32 (chiede conferma)");
   Serial.println("Pulsante BOOT: avvia/ferma registrazione");
 }
 
@@ -125,6 +126,16 @@ static void handleButton() {
   }
 }
 
+static void runBenchmark() {
+  if (isRecording()) {
+    Serial.println("Ferma prima la registrazione");
+    return;
+  }
+  const uint32_t sd = Storage::writeSpeedTest();
+  Serial.printf("Scrittura SD: %.0f KB/s\n", sd / 1024.0f);
+  CameraRec::benchmark(sd);
+}
+
 static void formatCard() {
   if (isRecording()) {
     Serial.println("Ferma prima la registrazione");
@@ -160,6 +171,7 @@ static void handleSerial() {
       case 's': case 'S': stopRecording(); break;
       case 'i': case 'I': printChipInfo(); break;
       case 'l': case 'L': Storage::listFiles(); break;
+      case 'b': case 'B': runBenchmark(); break;
       case 'h': case 'H': case '?': printHelp(); break;
       case 'F':
         Serial.println("ATTENZIONE: se la SD non è FAT (es. exFAT) verrà formattata e");

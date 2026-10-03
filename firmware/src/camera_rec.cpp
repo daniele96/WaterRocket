@@ -26,7 +26,7 @@ static TaskHandle_t s_task = nullptr;
 static SemaphoreHandle_t s_done = nullptr;
 static String s_dir;
 
-bool begin() {
+static bool initCamera(framesize_t size) {
   camera_config_t c = {};
   c.ledc_channel = LEDC_CHANNEL_0;
   c.ledc_timer = LEDC_TIMER_0;
@@ -48,7 +48,7 @@ bool begin() {
   c.pin_reset = CAM_PIN_RESET;
   c.xclk_freq_hz = 20000000;
   c.pixel_format = PIXFORMAT_JPEG;
-  c.frame_size = FRAME_SIZE;
+  c.frame_size = size;
   c.jpeg_quality = JPEG_QUALITY;
   c.fb_count = 2;
   c.fb_location = CAMERA_FB_IN_PSRAM;
@@ -74,10 +74,52 @@ bool begin() {
     camera_fb_t *fb = esp_camera_fb_get();
     if (fb) esp_camera_fb_return(fb);
   }
+  return true;
+}
 
+bool begin() {
+  if (!initCamera(FRAME_SIZE)) return false;
   s_done = xSemaphoreCreateBinary();
   s_ready = true;
   return true;
+}
+
+void benchmark(uint32_t sdBytesPerSec) {
+  if (!s_ready || s_task) return;
+  struct Mode { framesize_t size; const char *name; };
+  static const Mode modes[] = {
+      {FRAMESIZE_QVGA, "QVGA 320x240"},  {FRAMESIZE_VGA, "VGA 640x480"},
+      {FRAMESIZE_SVGA, "SVGA 800x600"},  {FRAMESIZE_HD, "HD 1280x720"},
+      {FRAMESIZE_SXGA, "SXGA 1280x1024"}, {FRAMESIZE_UXGA, "UXGA 1600x1200"},
+      {FRAMESIZE_QXGA, "QXGA 2048x1536"},
+  };
+  Serial.printf("Benchmark camera %s, qualità JPEG %d (3 s per risoluzione)\n", sensorName(),
+                JPEG_QUALITY);
+  Serial.println("Risoluzione        fps camera   KB/frame   fps max con SD");
+  for (const Mode &m : modes) {
+    esp_camera_deinit();
+    if (!initCamera(m.size)) {
+      Serial.printf("%-18s  init fallita\n", m.name);
+      continue;
+    }
+    uint32_t frames = 0;
+    uint64_t bytes = 0;
+    const uint32_t t0 = millis();
+    while (millis() - t0 < 3000) {
+      camera_fb_t *fb = esp_camera_fb_get();
+      if (!fb) continue;
+      bytes += fb->len;
+      frames++;
+      esp_camera_fb_return(fb);
+    }
+    const float fps = frames * 1000.0f / (millis() - t0);
+    const float avg = frames ? (float)bytes / frames : 0;
+    const float sdFps = avg > 0 ? sdBytesPerSec / avg : 0;
+    Serial.printf("%-18s  %8.1f   %8.1f   %8.1f\n", m.name, fps, avg / 1024, min(fps, sdFps));
+  }
+  esp_camera_deinit();
+  initCamera(FRAME_SIZE);
+  Serial.println("Ripristinata la risoluzione di registrazione");
 }
 
 bool isReady() { return s_ready; }

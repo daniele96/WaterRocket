@@ -125,6 +125,7 @@ async function loadSessions() {
         <b>${s.dir.slice(1)}</b>
         <div class="row">
           <button class="pri" onclick="play('${s.dir}')">▶ Guarda</button>
+          <a class="btn" href="/avi?dir=${encodeURIComponent(s.dir)}">⬇ Video con audio</a>
           <button onclick="del('${s.dir}')">🗑</button>
         </div>
       </div>

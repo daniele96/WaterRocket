@@ -17,6 +17,9 @@ String newSessionDir();
 
 void printInfo();
 
+// Scrive un file di prova da 4 MB e ritorna la velocità in byte/s (0 se fallisce).
+uint32_t writeSpeedTest();
+
 // Elenca le cartelle di sessione e i file contenuti, con le dimensioni.
 void listFiles();
 
