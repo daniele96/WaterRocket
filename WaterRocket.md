@@ -284,7 +284,7 @@ per il travaso pesante a razzo recuperato (scarico di video e log, la XIAO in AP
 | microSD slot | Sì, sulla shield camera |
 | PSRAM / Flash | 8 MB / 8 MB |
 | Carica LiPo | Sì, pad **BAT+/BAT-** da saldare |
-| Wireless | WiFi 2,4 GHz + BLE 5.0, antenna ceramica + IPEX |
+| Wireless | WiFi 2,4 GHz + BLE 5.0, **solo connettore U.FL/IPEX** (nessuna antenna sulla board): senza l'antenna esterna inclusa funziona solo a pochi cm–2 m |
 | Riferimento firmware | usata dal progetto `tritonFC` |
 
 ### Sensori e funzionalità sbloccate
