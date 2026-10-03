@@ -1,8 +1,5 @@
 #include "avi_export.h"
 
-#include <SD.h>
-#include <WiFi.h>
-
 #include "audio_rec.h"
 
 // Struttura del file generato (AVI 1.0 / RIFF):
@@ -14,15 +11,13 @@
 // Tutte le dimensioni sono calcolate prima, così il browser vede la
 // Content-Length esatta e la barra di avanzamento del download.
 
-namespace AviExport {
-
 namespace {
 
 constexpr uint32_t WAV_HEADER = 44;
 constexpr uint32_t AUDIO_BYTES_PER_MS = AudioRec::SAMPLE_RATE * 2 / 1000;
 constexpr uint32_t AVIIF_KEYFRAME = 0x10;
 constexpr uint32_t AVIF_HASINDEX = 0x10;
-constexpr uint32_t MAX_AVI_SIZE = 0x7FFFFFFF;  // oltre 2 GB molti player non leggono AVI 1.0
+constexpr uint64_t MAX_AVI_SIZE = 0x7FFFFFFF;  // oltre 2 GB molti player non leggono AVI 1.0
 
 struct Frame {
   uint32_t t;     // ms dall'inizio della registrazione
@@ -31,63 +26,15 @@ struct Frame {
 
 uint32_t pad2(uint32_t n) { return (n + 1) & ~1u; }
 
-// Scrittura bufferizzata verso il client HTTP
-class Out {
+class Buf {
  public:
-  explicit Out(WiFiClient &c) : c_(c) {}
-
-  bool ok() const { return ok_; }
-
-  void put(const void *p, size_t n) {
-    const uint8_t *b = static_cast<const uint8_t *>(p);
-    while (n && ok_) {
-      if (len_ == sizeof(buf_)) flush();
-      const size_t k = min(n, sizeof(buf_) - len_);
-      memcpy(buf_ + len_, b, k);
-      len_ += k;
-      b += k;
-      n -= k;
-    }
-  }
-  void u32(uint32_t v) {
-    const uint8_t b[4] = {(uint8_t)v, (uint8_t)(v >> 8), (uint8_t)(v >> 16), (uint8_t)(v >> 24)};
-    put(b, 4);
-  }
-  void u16(uint16_t v) {
-    const uint8_t b[2] = {(uint8_t)v, (uint8_t)(v >> 8)};
-    put(b, 2);
-  }
-  void fcc(const char *s) { put(s, 4); }
-
-  // Copia n byte dal file corrente
-  void copy(File &f, uint32_t n) {
-    while (n && ok_) {
-      if (len_ == sizeof(buf_)) flush();
-      const size_t k = min((size_t)n, sizeof(buf_) - len_);
-      const size_t r = f.read(buf_ + len_, k);
-      if (r != k) {  // file più corto del previsto: riempio di zeri per non sfasare il RIFF
-        memset(buf_ + len_ + r, 0, k - r);
-      }
-      len_ += k;
-      n -= k;
-    }
-  }
-
-  void flush() {
-    size_t off = 0;
-    while (ok_ && off < len_) {
-      const size_t w = c_.write(buf_ + off, len_ - off);
-      if (w == 0) ok_ = false;  // client disconnesso
-      off += w;
-    }
-    len_ = 0;
-  }
+  explicit Buf(std::vector<uint8_t> &v) : v_(v) {}
+  void u32(uint32_t x) { for (int i = 0; i < 4; i++) v_.push_back(x >> (8 * i)); }
+  void u16(uint16_t x) { v_.push_back(x); v_.push_back(x >> 8); }
+  void fcc(const char *s) { v_.insert(v_.end(), s, s + 4); }
 
  private:
-  WiFiClient &c_;
-  uint8_t buf_[4096];
-  size_t len_ = 0;
-  bool ok_ = true;
+  std::vector<uint8_t> &v_;
 };
 
 // Legge frames.csv (frame,t_ms,bytes) in un array in PSRAM
@@ -122,17 +69,16 @@ Frame *loadFrames(const String &path, size_t &count) {
       if (size && count < cap) frames[count++] = {(uint32_t)strtoul(p + 1, nullptr, 10), size};
     }
   }
-  f.close();
   return frames;
 }
 
 // Larghezza/altezza dal marker SOF del primo JPEG
 void jpegSize(File &vid, uint32_t len, uint16_t &w, uint16_t &h) {
-  w = 640;
-  h = 480;
+  w = 800;
+  h = 600;
   uint8_t b[1024];
-  const size_t n = vid.read(b, min((size_t)len, sizeof(b)));
   vid.seek(0);
+  const size_t n = vid.read(b, min((size_t)len, sizeof(b)));
   for (size_t i = 0; i + 8 < n; i++) {
     if (b[i] == 0xFF && (b[i + 1] == 0xC0 || b[i + 1] == 0xC2)) {
       h = (b[i + 5] << 8) | b[i + 6];
@@ -142,7 +88,7 @@ void jpegSize(File &vid, uint32_t len, uint16_t &w, uint16_t &h) {
   }
 }
 
-void writeStrh(Out &o, const char *type, const char *handler, uint32_t scale, uint32_t rate,
+void writeStrh(Buf &o, const char *type, const char *handler, uint32_t scale, uint32_t rate,
                uint32_t length, uint32_t bufSize, uint32_t sampleSize, uint16_t w, uint16_t h) {
   o.fcc("strh");
   o.u32(56);
@@ -164,21 +110,25 @@ void writeStrh(Out &o, const char *type, const char *handler, uint32_t scale, ui
 
 }  // namespace
 
-void stream(WebServer &server, const String &dir) {
+AviSource::~AviSource() {
+  free(chunks_);
+}
+
+bool AviSource::open(const String &dir) {
   size_t n = 0;
   Frame *frames = loadFrames(dir + "/frames.csv", n);
-  File vid = SD.open(dir + "/video.mjpeg");
-  if (!frames || !vid || n == 0) {
+  vid_ = SD.open(dir + "/video.mjpeg");
+  if (!frames || !vid_ || n == 0) {
     free(frames);
-    server.send(404, "text/plain", "registrazione incompleta o vuota");
-    return;
+    error_ = "registrazione incompleta o vuota";
+    return false;
   }
 
   // Se è saltata la corrente il CSV può elencare frame non ancora scritti nel video
   uint64_t sum = 0;
   size_t valid = 0;
   uint32_t maxFrame = 0;
-  while (valid < n && sum + frames[valid].size <= vid.size()) {
+  while (valid < n && sum + frames[valid].size <= vid_.size()) {
     sum += frames[valid].size;
     maxFrame = max(maxFrame, frames[valid].size);
     valid++;
@@ -186,16 +136,16 @@ void stream(WebServer &server, const String &dir) {
   n = valid;
   if (n == 0) {
     free(frames);
-    server.send(404, "text/plain", "nessun frame valido");
-    return;
+    error_ = "nessun frame valido";
+    return false;
   }
 
-  File wav = SD.open(dir + "/audio.wav");
+  wav_ = SD.open(dir + "/audio.wav");
   // Uso la dimensione reale del file: l'header potrebbe non essere aggiornato
-  const uint32_t audioLen = (wav && wav.size() > WAV_HEADER) ? (wav.size() - WAV_HEADER) & ~1u : 0;
+  const uint32_t audioLen = (wav_ && wav_.size() > WAV_HEADER) ? (wav_.size() - WAV_HEADER) & ~1u : 0;
   const bool hasAudio = audioLen > 0;
 
-  // Inizio dell'audio da accodare a ogni frame: [audioAt(i), audioAt(i+1))
+  // Audio da accodare a ogni frame: [audioAt(i), audioAt(i+1))
   auto audioAt = [&](size_t i) -> uint32_t {
     if (i == 0) return 0;
     if (i >= n) return audioLen;
@@ -205,41 +155,48 @@ void stream(WebServer &server, const String &dir) {
   const uint32_t durMs = n > 1 ? frames[n - 1].t - frames[0].t : 1000;
   const float fps = n > 1 && durMs ? (n - 1) * 1000.0f / durMs : 1.0f;
   uint16_t w, h;
-  jpegSize(vid, frames[0].size, w, h);
+  jpegSize(vid_, frames[0].size, w, h);
 
-  // --- Calcolo delle dimensioni ---
-  uint32_t moviData = 0, chunks = 0;
-  for (size_t i = 0; i < n; i++) {
-    moviData += 8 + pad2(frames[i].size);
-    chunks++;
-    const uint32_t a0 = audioAt(i), a1 = audioAt(i + 1);
-    if (hasAudio && a1 > a0) {
-      moviData += 8 + (a1 - a0);
-      chunks++;
-    }
+  // --- Tabella dei chunk (posizioni nel file AVI e nei file sorgente) ---
+  chunks_ = static_cast<Chunk *>(ps_malloc(2 * n * sizeof(Chunk)));
+  if (!chunks_) {
+    free(frames);
+    error_ = "memoria insufficiente";
+    return false;
   }
   const uint32_t strlVideo = 4 + (8 + 56) + (8 + 40);
   const uint32_t strlAudio = 4 + (8 + 56) + (8 + 18);
   const uint32_t hdrl = 4 + (8 + 56) + (8 + strlVideo) + (hasAudio ? 8 + strlAudio : 0);
-  const uint32_t movi = 4 + moviData;
-  const uint32_t idx1 = 16 * chunks;
-  const uint64_t riff = 4ULL + (8 + hdrl) + (8 + movi) + (8 + idx1);
-  if (8 + riff > MAX_AVI_SIZE) {
-    free(frames);
-    server.send(413, "text/plain", "registrazione troppo lunga per un AVI: scarica i file separati");
-    return;
+  moviFcc_ = 12 + 8 + hdrl + 8;  // RIFF(12) + LIST hdrl + 'LIST'+size, poi 'movi'
+
+  uint64_t off = moviFcc_ + 4;
+  uint32_t vsrc = 0;
+  nChunks_ = 0;
+  for (size_t i = 0; i < n; i++) {
+    chunks_[nChunks_++] = {(uint32_t)off, vsrc, frames[i].size, false};
+    off += 8 + pad2(frames[i].size);
+    vsrc += frames[i].size;
+    const uint32_t a0 = audioAt(i), a1 = audioAt(i + 1);
+    if (hasAudio && a1 > a0) {
+      chunks_[nChunks_++] = {(uint32_t)off, WAV_HEADER + a0, a1 - a0, true};
+      off += 8 + (a1 - a0);
+    }
+    if (off > MAX_AVI_SIZE) break;
   }
-
-  String fname = dir.substring(1) + ".avi";
-  server.sendHeader("Content-Disposition", "attachment; filename=\"" + fname + "\"");
-  server.setContentLength(8 + riff);
-  server.send(200, "video/x-msvideo", "");
-
-  WiFiClient client = server.client();
-  Out o(client);
+  free(frames);
+  if (off + 8 + 16ULL * nChunks_ > MAX_AVI_SIZE) {
+    error_ = "registrazione troppo lunga per un AVI: scarica i file separati";
+    return false;
+  }
+  idxStart_ = off;
+  const uint32_t movi = idxStart_ - moviFcc_;
+  total_ = idxStart_ + 8 + 16 * nChunks_;
 
   // --- Header ---
-  o.fcc("RIFF"); o.u32(riff); o.fcc("AVI ");
+  header_.clear();
+  header_.reserve(moviFcc_ + 4);
+  Buf o(header_);
+  o.fcc("RIFF"); o.u32(total_ - 8); o.fcc("AVI ");
   o.fcc("LIST"); o.u32(hdrl); o.fcc("hdrl");
 
   o.fcc("avih"); o.u32(56);
@@ -272,37 +229,86 @@ void stream(WebServer &server, const String &dir) {
     o.u16(2); o.u16(16); o.u16(0);
   }
 
-  // --- Dati ---
   o.fcc("LIST"); o.u32(movi); o.fcc("movi");
-  if (hasAudio) wav.seek(WAV_HEADER);
-  for (size_t i = 0; i < n && o.ok(); i++) {
-    o.fcc("00dc"); o.u32(frames[i].size);
-    o.copy(vid, frames[i].size);
-    if (frames[i].size & 1) o.put("\0", 1);
-    const uint32_t a0 = audioAt(i), a1 = audioAt(i + 1);
-    if (hasAudio && a1 > a0) {
-      o.fcc("01wb"); o.u32(a1 - a0);
-      o.copy(wav, a1 - a0);
-    }
-  }
-
-  // --- Indice (offset relativi al fourcc 'movi') ---
-  o.fcc("idx1"); o.u32(idx1);
-  uint32_t off = 4;
-  for (size_t i = 0; i < n && o.ok(); i++) {
-    o.fcc("00dc"); o.u32(AVIIF_KEYFRAME); o.u32(off); o.u32(frames[i].size);
-    off += 8 + pad2(frames[i].size);
-    const uint32_t a0 = audioAt(i), a1 = audioAt(i + 1);
-    if (hasAudio && a1 > a0) {
-      o.fcc("01wb"); o.u32(AVIIF_KEYFRAME); o.u32(off); o.u32(a1 - a0);
-      off += 8 + (a1 - a0);
-    }
-  }
-  o.flush();
-
-  vid.close();
-  if (wav) wav.close();
-  free(frames);
+  return true;
 }
 
-}  // namespace AviExport
+size_t AviSource::read(uint32_t offset, uint8_t *buf, size_t len) {
+  size_t done = 0;
+  while (done < len && offset < total_) {
+    size_t n = 0;
+    if (offset < header_.size()) {
+      n = min(len - done, (size_t)(header_.size() - offset));
+      memcpy(buf + done, header_.data() + offset, n);
+    } else if (offset < idxStart_) {
+      // Ricerca binaria del chunk che contiene offset
+      size_t lo = 0, hi = nChunks_ - 1;
+      while (lo < hi) {
+        const size_t mid = (lo + hi + 1) / 2;
+        if (chunks_[mid].off <= offset) lo = mid; else hi = mid - 1;
+      }
+      n = readChunk(chunks_[lo], offset - chunks_[lo].off, buf + done, len - done);
+    } else {
+      n = readIndex(offset - idxStart_, buf + done, len - done);
+    }
+    if (n == 0) break;
+    done += n;
+    offset += n;
+  }
+  return done;
+}
+
+// Byte di un chunk: header (8) + dati dal file sorgente + eventuale byte di padding
+size_t AviSource::readChunk(const Chunk &c, uint32_t rel, uint8_t *buf, size_t len) {
+  if (rel < 8) {
+    uint8_t h[8];
+    memcpy(h, c.audio ? "01wb" : "00dc", 4);
+    for (int i = 0; i < 4; i++) h[4 + i] = c.len >> (8 * i);
+    const size_t n = min(len, (size_t)(8 - rel));
+    memcpy(buf, h + rel, n);
+    return n;
+  }
+  const uint32_t dataRel = rel - 8;
+  if (dataRel < c.len) {
+    File &f = c.audio ? wav_ : vid_;
+    const uint32_t pos = c.src + dataRel;
+    if (f.position() != pos) f.seek(pos);
+    const size_t want = min(len, (size_t)(c.len - dataRel));
+    const size_t got = f.read(buf, want);
+    if (got < want) memset(buf + got, 0, want - got);  // file più corto: zeri per non sfasare il RIFF
+    return want;
+  }
+  buf[0] = 0;  // padding a dimensione pari
+  return 1;
+}
+
+// Byte di idx1: header (8) + 16 byte per chunk (offset relativi al fourcc 'movi')
+size_t AviSource::readIndex(uint32_t rel, uint8_t *buf, size_t len) {
+  size_t done = 0;
+  while (done < len) {
+    uint8_t e[16];
+    uint32_t base, size;
+    if (rel < 8) {
+      memcpy(e, "idx1", 4);
+      const uint32_t s = 16 * nChunks_;
+      for (int i = 0; i < 4; i++) e[4 + i] = s >> (8 * i);
+      base = 0;
+      size = 8;
+    } else {
+      const size_t k = (rel - 8) / 16;
+      if (k >= nChunks_) break;
+      const Chunk &c = chunks_[k];
+      const uint32_t v[4] = {0, AVIIF_KEYFRAME, c.off - moviFcc_, c.len};
+      memcpy(e, c.audio ? "01wb" : "00dc", 4);
+      for (int j = 1; j < 4; j++)
+        for (int i = 0; i < 4; i++) e[4 * j + i] = v[j] >> (8 * i);
+      base = 8 + 16 * k;
+      size = 16;
+    }
+    const size_t n = min(len - done, (size_t)(size - (rel - base)));
+    memcpy(buf + done, e + (rel - base), n);
+    done += n;
+    rel += n;
+  }
+  return done;
+}

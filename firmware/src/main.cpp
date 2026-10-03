@@ -11,6 +11,8 @@
 #include <Arduino.h>
 #include <SD.h>
 
+#include <mutex>
+
 #include "audio_rec.h"
 #include "board_pins.h"
 #include "camera_rec.h"
@@ -24,7 +26,16 @@ static constexpr bool WIFI_ENABLED = true;
 static constexpr uint32_t STATUS_MS = 2000;
 static constexpr uint32_t DEBOUNCE_MS = 50;
 
+// Cartella del lancio in corso. Scritta solo dal loop(), letta anche dal task
+// del web server: per questo l'accesso dall'esterno passa da un mutex.
 static String s_sessionDir;
+static std::mutex s_sessionMutex;
+
+static String sessionDir() {
+  std::lock_guard<std::mutex> lock(s_sessionMutex);
+  return s_sessionDir;
+}
+static time_t s_startEpoch = 0;
 
 static void printChipInfo() {
   Serial.println();
@@ -66,11 +77,25 @@ static void startRecording() {
     Serial.println("Impossibile registrare: SD non montata (inserita? formattata FAT32?)");
     return;
   }
-  s_sessionDir = Storage::newSessionDir();
+  const String dir = Storage::newSessionDir();
+  {
+    std::lock_guard<std::mutex> lock(s_sessionMutex);
+    s_sessionDir = dir;
+  }
   if (s_sessionDir.isEmpty()) {
     Serial.println("Impossibile creare la cartella di sessione");
     return;
   }
+  // Ora di inizio (0 se l'orologio non è ancora stato impostato da NTP o dal browser).
+  // info.txt viene riscritto completo allo stop; se salta la corrente resta almeno questo.
+  const time_t now = time(nullptr);
+  s_startEpoch = now > 1700000000 ? now : 0;
+  File info = SD.open(s_sessionDir + "/info.txt", FILE_WRITE);
+  if (info) {
+    info.printf("started_epoch=%lld\nstatus=recording\n", (long long)s_startEpoch);
+    info.close();
+  }
+
   const bool cam = CameraRec::start(s_sessionDir);
   const bool mic = AudioRec::start(s_sessionDir);
   Serial.printf(">> REC avviata in %s (video: %s, audio: %s)\n", s_sessionDir.c_str(),
@@ -89,6 +114,7 @@ static void stopRecording() {
   // Riepilogo della sessione, utile per convertire il video con il giusto framerate
   File info = SD.open(s_sessionDir + "/info.txt", FILE_WRITE);
   if (info) {
+    info.printf("started_epoch=%lld\nstatus=complete\n", (long long)s_startEpoch);
     info.printf("camera=%s\nframes=%lu\nduration_s=%.2f\nfps=%.2f\naudio_s=%.2f\n",
                 CameraRec::sensorName(), (unsigned long)frames, secs, fps, AudioRec::seconds());
     info.printf("errors_video=%lu\nerrors_audio=%lu\n", (unsigned long)CameraRec::errors(),
@@ -210,8 +236,7 @@ void setup() {
   CameraRec::begin();
   AudioRec::begin();
   if (WIFI_ENABLED) {
-    Web::begin({startRecording, stopRecording, isRecording,
-                [] () -> const String & { return s_sessionDir; }});
+    Web::begin({startRecording, stopRecording, isRecording, sessionDir});
   }
 
   printChipInfo();

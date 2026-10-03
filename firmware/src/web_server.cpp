@@ -1,10 +1,14 @@
 #include "web_server.h"
 
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <ESPmDNS.h>
 #include <SD.h>
-#include <WebServer.h>
 #include <WiFi.h>
 #include <esp_camera.h>
+
+#include <atomic>
+#include <memory>
 
 #include "audio_rec.h"
 #include "avi_export.h"
@@ -21,16 +25,36 @@
 static constexpr const char *AP_SSID = "WaterRocket";
 static constexpr const char *AP_PASS = "razzo1234";  // almeno 8 caratteri
 static constexpr const char *HOSTNAME = "rocket";    // http://rocket.local
+static constexpr size_t MAX_META_BYTES = 4096;
+
+// Il server è asincrono: gli handler girano nel task di AsyncTCP, in parallelo
+// al loop() e ai task di registrazione. Possono leggere/scrivere la SD (FATFS è
+// thread-safe) ma avvio/stop della registrazione vengono passati al loop().
 
 namespace Web {
 
-static WebServer s_server(80);
+enum class Cmd : int { None, Start, Stop };
+
+static AsyncWebServer s_server(80);
 static RecorderHooks s_hooks;
 static bool s_started = false;
+static std::atomic<Cmd> s_cmd{Cmd::None};
 
-// Accetta solo file dentro le cartelle di sessione, niente path traversal
+// Accetta solo file dentro le cartelle dei lanci, niente path traversal
 static bool isSafePath(const String &p) {
   return p.startsWith("/REC_") && p.indexOf("..") < 0;
+}
+
+// Cartella di un lancio: /REC_xxxx (senza sottocartelle)
+static bool isLaunchDir(const String &d) {
+  return isSafePath(d) && d.indexOf('/', 1) < 0;
+}
+
+static bool clockValid() { return time(nullptr) > 1700000000; }  // dopo nov 2023
+
+static String param(AsyncWebServerRequest *req, const char *name) {
+  const AsyncWebParameter *p = req->getParam(name);
+  return p ? p->value() : String();
 }
 
 static String jsonEscape(const String &s) {
@@ -53,32 +77,42 @@ static String readSmallFile(const String &path) {
   return s;
 }
 
-static void handleRoot() {
-  s_server.send_P(200, "text/html; charset=utf-8", WEB_PAGE);
+// Invia un file aperto a pezzi; il File resta vivo finché serve alla risposta
+static AsyncWebServerResponse *fileResponse(std::shared_ptr<File> f, uint32_t len, const char *type) {
+  return new AsyncCallbackResponse(type, len, [f](uint8_t *buf, size_t maxLen, size_t index) -> size_t {
+    if (f->position() != index) f->seek(index);
+    return f->read(buf, maxLen);
+  });
 }
 
-static void handleStatus() {
+static void handleStatus(AsyncWebServerRequest *req) {
   const bool rec = s_hooks.isRecording();
   const float secs = CameraRec::elapsedMs() / 1000.0f;
-  char buf[320];
+  const String dir = rec ? s_hooks.sessionDir() : String();
+  const String ip = WiFi.status() == WL_CONNECTED ? WiFi.localIP().toString() : String();
+  char buf[400];
   snprintf(buf, sizeof(buf),
-           "{\"recording\":%s,\"dir\":\"%s\",\"secs\":%.1f,\"frames\":%lu,\"fps\":%.1f,"
-           "\"audio\":%.1f,\"camera\":\"%s\",\"sd\":%s,\"sdTotalMB\":%llu,\"sdFreeMB\":%llu}",
-           rec ? "true" : "false", rec ? s_hooks.sessionDir().c_str() : "", rec ? secs : 0.0f,
-           (unsigned long)(rec ? CameraRec::frames() : 0),
+           "{\"time\":%lld,\"staIp\":\"%s\",\"recording\":%s,\"dir\":\"%s\",\"secs\":%.1f,"
+           "\"frames\":%lu,\"fps\":%.1f,\"audio\":%.1f,\"camera\":\"%s\",\"sd\":%s,"
+           "\"sdTotalMB\":%llu,\"sdFreeMB\":%llu}",
+           clockValid() ? (long long)time(nullptr) : 0LL, ip.c_str(), rec ? "true" : "false",
+           dir.c_str(), rec ? secs : 0.0f, (unsigned long)(rec ? CameraRec::frames() : 0),
            rec && secs > 0 ? CameraRec::frames() / secs : 0.0f, rec ? AudioRec::seconds() : 0.0f,
            CameraRec::isReady() ? CameraRec::sensorName() : "-",
            Storage::isMounted() ? "true" : "false",
            Storage::isMounted() ? SD.totalBytes() / (1024 * 1024) : 0ULL,
            Storage::isMounted() ? (SD.totalBytes() - SD.usedBytes()) / (1024 * 1024) : 0ULL);
-  s_server.send(200, "application/json", buf);
+  req->send(200, "application/json", buf);
 }
 
-static void handleSessions() {
+// Elenco dei lanci: info.txt (scritto dal firmware), launch.json (scritto
+// dalla pagina: nome, parametri, note) e file presenti nella cartella
+static void handleLaunches(AsyncWebServerRequest *req) {
   if (!Storage::isMounted()) {
-    s_server.send(200, "application/json", "[]");
+    req->send(200, "application/json", "[]");
     return;
   }
+  const String recDir = s_hooks.isRecording() ? s_hooks.sessionDir() : String();
   String out = "[";
   bool firstDir = true;
   File root = SD.open("/");
@@ -87,8 +121,12 @@ static void handleSessions() {
     if (!dir.isDirectory() || !name.startsWith("/REC_")) continue;
     if (!firstDir) out += ",";
     firstDir = false;
-    out += "{\"dir\":\"" + name + "\",\"info\":\"" + jsonEscape(readSmallFile(name + "/info.txt")) +
-           "\",\"files\":[";
+    String meta = readSmallFile(name + "/launch.json");
+    meta.trim();
+    if (!meta.startsWith("{")) meta = "null";
+    out += "{\"dir\":\"" + name + "\",\"recording\":" + (name == recDir ? "true" : "false") +
+           ",\"info\":\"" + jsonEscape(readSmallFile(name + "/info.txt")) + "\",\"meta\":" + meta +
+           ",\"files\":[";
     bool firstFile = true;
     for (File f = dir.openNextFile(); f; f = dir.openNextFile()) {
       if (!firstFile) out += ",";
@@ -98,59 +136,139 @@ static void handleSessions() {
     out += "]}";
   }
   out += "]";
-  s_server.send(200, "application/json", out);
+  req->send(200, "application/json", out);
 }
 
 static const char *contentType(const String &path) {
   if (path.endsWith(".wav")) return "audio/wav";
   if (path.endsWith(".csv")) return "text/csv";
   if (path.endsWith(".txt")) return "text/plain";
+  if (path.endsWith(".json")) return "application/json";
   return "application/octet-stream";
 }
 
-static void handleFile() {
-  const String path = s_server.arg("path");
+static void handleFile(AsyncWebServerRequest *req) {
+  const String path = param(req, "path");
   if (!isSafePath(path)) {
-    s_server.send(400, "text/plain", "path non valido");
+    req->send(400, "text/plain", "path non valido");
     return;
   }
-  File f = SD.open(path);
-  if (!f || f.isDirectory()) {
-    s_server.send(404, "text/plain", "file non trovato");
+  auto f = std::make_shared<File>(SD.open(path));
+  if (!*f || f->isDirectory()) {
+    req->send(404, "text/plain", "file non trovato");
     return;
   }
-  if (s_server.hasArg("dl")) {
+  AsyncWebServerResponse *res = fileResponse(f, f->size(), contentType(path));
+  if (req->hasParam("dl")) {
     // Nome scaricato: REC_0001_video.mjpeg
     String fname = path.substring(1);
     fname.replace('/', '_');
-    s_server.sendHeader("Content-Disposition", "attachment; filename=\"" + fname + "\"");
+    res->addHeader("Content-Disposition", "attachment; filename=\"" + fname + "\"");
   }
-  s_server.streamFile(f, contentType(path));
-  f.close();
+  req->send(res);
 }
 
-static void handleAvi() {
-  const String dir = s_server.arg("dir");
-  if (!isSafePath(dir) || dir.indexOf('/', 1) >= 0) {
-    s_server.send(400, "text/plain", "cartella non valida");
+// Miniatura: il primo JPEG di video.mjpeg (dimensione presa da frames.csv)
+static void handleThumb(AsyncWebServerRequest *req) {
+  const String dir = param(req, "dir");
+  if (!isLaunchDir(dir)) {
+    req->send(400, "text/plain", "lancio non valido");
     return;
   }
-  AviExport::stream(s_server, dir);
+  File csv = SD.open(dir + "/frames.csv");
+  auto vid = std::make_shared<File>(SD.open(dir + "/video.mjpeg"));
+  if (!csv || !*vid) {
+    req->send(404, "text/plain", "nessun video");
+    return;
+  }
+  csv.readStringUntil('\n');                       // intestazione
+  const String first = csv.readStringUntil('\n');  // 0,t_ms,bytes
+  csv.close();
+  const uint32_t len = first.substring(first.lastIndexOf(',') + 1).toInt();
+  if (len == 0 || len > vid->size()) {
+    req->send(404, "text/plain", "nessun frame");
+    return;
+  }
+  // Il primo frame non cambia più: il browser può tenerlo in cache
+  AsyncWebServerResponse *res = new AsyncCallbackResponse(
+      "image/jpeg", len, [vid, len](uint8_t *buf, size_t maxLen, size_t index) -> size_t {
+        if (index >= len) return 0;
+        if (vid->position() != index) vid->seek(index);
+        return vid->read(buf, min(maxLen, (size_t)(len - index)));
+      });
+  res->addHeader("Cache-Control", "max-age=86400");
+  req->send(res);
 }
 
-static void handleDelete() {
-  const String dir = s_server.arg("dir");
-  if (!isSafePath(dir) || dir.indexOf('/', 1) >= 0) {
-    s_server.send(400, "text/plain", "cartella non valida");
+static void handleAvi(AsyncWebServerRequest *req) {
+  const String dir = param(req, "dir");
+  if (!isLaunchDir(dir)) {
+    req->send(400, "text/plain", "lancio non valido");
+    return;
+  }
+  auto src = std::make_shared<AviSource>();
+  if (!src->open(dir)) {
+    req->send(404, "text/plain", src->error());
+    return;
+  }
+  AsyncWebServerResponse *res = new AsyncCallbackResponse(
+      "video/x-msvideo", src->size(),
+      [src](uint8_t *buf, size_t maxLen, size_t index) -> size_t { return src->read(index, buf, maxLen); });
+  res->addHeader("Content-Disposition", "attachment; filename=\"" + dir.substring(1) + ".avi\"");
+  req->send(res);
+}
+
+// Salva launch.json (nome, parametri, note). Il contenuto è deciso dalla pagina.
+static void handleSaveLaunchBody(AsyncWebServerRequest *req, uint8_t *data, size_t len, size_t index,
+                                 size_t total) {
+  if (total > MAX_META_BYTES) return;
+  if (index == 0) {
+    req->_tempObject = calloc(total + 1, 1);  // liberato dalla libreria a fine richiesta
+  }
+  if (req->_tempObject) memcpy(static_cast<char *>(req->_tempObject) + index, data, len);
+}
+
+static void handleSaveLaunch(AsyncWebServerRequest *req) {
+  const String dir = param(req, "dir");
+  const char *body = static_cast<const char *>(req->_tempObject);
+  if (!isLaunchDir(dir) || !SD.exists(dir)) {
+    req->send(400, "text/plain", "lancio non valido");
+    return;
+  }
+  if (!body || body[0] != '{') {
+    req->send(400, "text/plain", "dati non validi (max 4 KB)");
+    return;
+  }
+  File f = SD.open(dir + "/launch.json", FILE_WRITE);
+  const size_t n = strlen(body);
+  const bool ok = f && f.write(reinterpret_cast<const uint8_t *>(body), n) == n;
+  if (f) f.close();
+  req->send(ok ? 200 : 500, "text/plain", ok ? "ok" : "salvataggio fallito");
+}
+
+// Il browser comunica l'ora quando lo XIAO non l'ha presa da internet (NTP)
+static void handleTime(AsyncWebServerRequest *req) {
+  const long long epoch = atoll(param(req, "epoch").c_str());
+  if (!clockValid() && epoch > 1700000000LL) {
+    timeval tv = {(time_t)epoch, 0};
+    settimeofday(&tv, nullptr);
+  }
+  req->send(200, "text/plain", clockValid() ? "ok" : "ora non impostata");
+}
+
+static void handleDelete(AsyncWebServerRequest *req) {
+  const String dir = param(req, "dir");
+  if (!isLaunchDir(dir)) {
+    req->send(400, "text/plain", "lancio non valido");
     return;
   }
   if (s_hooks.isRecording() && dir == s_hooks.sessionDir()) {
-    s_server.send(409, "text/plain", "registrazione in corso in questa cartella");
+    req->send(409, "text/plain", "registrazione in corso in questo lancio");
     return;
   }
   File d = SD.open(dir);
   if (!d || !d.isDirectory()) {
-    s_server.send(404, "text/plain", "cartella non trovata");
+    req->send(404, "text/plain", "lancio non trovato");
     return;
   }
   for (File f = d.openNextFile(); f; f = d.openNextFile()) {
@@ -160,24 +278,13 @@ static void handleDelete() {
   }
   d.close();
   const bool ok = SD.rmdir(dir);
-  s_server.send(ok ? 200 : 500, "text/plain", ok ? "ok" : "eliminazione fallita");
-}
-
-static void handleRecStart() {
-  s_hooks.start();
-  s_server.send(s_hooks.isRecording() ? 200 : 500, "text/plain",
-                s_hooks.isRecording() ? "ok" : "avvio fallito (SD?)");
-}
-
-static void handleRecStop() {
-  s_hooks.stop();
-  s_server.send(200, "text/plain", "ok");
+  req->send(ok ? 200 : 500, "text/plain", ok ? "ok" : "eliminazione fallita");
 }
 
 // Foto singola per puntare la camera; non disponibile durante la registrazione
-static void handleSnapshot() {
+static void handleSnapshot(AsyncWebServerRequest *req) {
   if (!CameraRec::isReady() || s_hooks.isRecording()) {
-    s_server.send(409, "text/plain", "camera occupata");
+    req->send(409, "text/plain", "camera occupata");
     return;
   }
   // Con 2 buffer in modalità GRAB_LATEST il primo frame può essere vecchio
@@ -185,14 +292,26 @@ static void handleSnapshot() {
   if (fb) esp_camera_fb_return(fb);
   fb = esp_camera_fb_get();
   if (!fb) {
-    s_server.send(500, "text/plain", "acquisizione fallita");
+    req->send(500, "text/plain", "acquisizione fallita");
     return;
   }
-  s_server.sendHeader("Cache-Control", "no-store");
-  s_server.setContentLength(fb->len);
-  s_server.send(200, "image/jpeg", "");
-  s_server.client().write(fb->buf, fb->len);
+  // Copia in PSRAM e restituisco subito il buffer alla camera
+  const size_t len = fb->len;
+  std::shared_ptr<uint8_t> jpg(static_cast<uint8_t *>(ps_malloc(len)), free);
+  if (jpg) memcpy(jpg.get(), fb->buf, len);
   esp_camera_fb_return(fb);
+  if (!jpg) {
+    req->send(500, "text/plain", "memoria insufficiente");
+    return;
+  }
+  AsyncWebServerResponse *res = new AsyncCallbackResponse(
+      "image/jpeg", len, [jpg, len](uint8_t *buf, size_t maxLen, size_t index) -> size_t {
+        const size_t n = min(maxLen, len - index);
+        memcpy(buf, jpg.get() + index, n);
+        return n;
+      });
+  res->addHeader("Cache-Control", "no-store");
+  req->send(res);
 }
 
 bool begin(const RecorderHooks &hooks) {
@@ -205,6 +324,8 @@ bool begin(const RecorderHooks &hooks) {
   WiFi.mode(WIFI_AP_STA);
   WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_STA_SSID, WIFI_STA_PASS);
+  // Ora da internet appena la rete è collegata (UTC; la pagina la mostra in ora locale)
+  configTime(0, 0, "pool.ntp.org", "time.google.com");
 #else
   WiFi.mode(WIFI_AP);
 #endif
@@ -215,16 +336,28 @@ bool begin(const RecorderHooks &hooks) {
   WiFi.setSleep(false);
   MDNS.begin(HOSTNAME);
 
-  s_server.on("/", HTTP_GET, handleRoot);
+  s_server.on("/", HTTP_GET, [](AsyncWebServerRequest *req) {
+    req->send(200, "text/html; charset=utf-8", reinterpret_cast<const uint8_t *>(WEB_PAGE),
+              strlen(WEB_PAGE));
+  });
   s_server.on("/api/status", HTTP_GET, handleStatus);
-  s_server.on("/api/sessions", HTTP_GET, handleSessions);
-  s_server.on("/api/rec/start", HTTP_POST, handleRecStart);
-  s_server.on("/api/rec/stop", HTTP_POST, handleRecStop);
+  s_server.on("/api/launches", HTTP_GET, handleLaunches);
+  s_server.on("/api/launch", HTTP_POST, handleSaveLaunch, nullptr, handleSaveLaunchBody);
+  s_server.on("/api/time", HTTP_POST, handleTime);
   s_server.on("/api/delete", HTTP_POST, handleDelete);
+  s_server.on("/api/rec/start", HTTP_POST, [](AsyncWebServerRequest *req) {
+    s_cmd = Cmd::Start;
+    req->send(202, "text/plain", "ok");
+  });
+  s_server.on("/api/rec/stop", HTTP_POST, [](AsyncWebServerRequest *req) {
+    s_cmd = Cmd::Stop;
+    req->send(202, "text/plain", "ok");
+  });
   s_server.on("/file", HTTP_GET, handleFile);
+  s_server.on("/thumb", HTTP_GET, handleThumb);
   s_server.on("/avi", HTTP_GET, handleAvi);
   s_server.on("/snapshot.jpg", HTTP_GET, handleSnapshot);
-  s_server.onNotFound([] { s_server.send(404, "text/plain", "non trovato"); });
+  s_server.onNotFound([](AsyncWebServerRequest *req) { req->send(404, "text/plain", "non trovato"); });
   s_server.begin();
   MDNS.addService("http", "tcp", 80);
 
@@ -234,7 +367,13 @@ bool begin(const RecorderHooks &hooks) {
 
 void handle() {
   if (!s_started) return;
-  s_server.handleClient();
+
+  // Comandi dalla pagina, eseguiti qui per non sovrapporsi a pulsante e seriale
+  switch (s_cmd.exchange(Cmd::None)) {
+    case Cmd::Start: s_hooks.start(); break;
+    case Cmd::Stop: s_hooks.stop(); break;
+    default: break;
+  }
 
 #ifdef WIFI_STA_SSID
   // Segnala sulla seriale quando la connessione alla rete esterna cambia

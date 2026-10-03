@@ -34,15 +34,30 @@ solo l'ultimo secondo.
 su escono formattate exFAT: riformattale FAT32, ad esempio da prompt
 `format X: /FS:FAT32 /Q` (Windows 11 recenti) oppure con *guiformat* / *Rufus*.
 
-### Pagina web (WiFi)
+### Piattaforma web dei lanci (WiFi)
 
 All'accensione lo XIAO crea la rete WiFi **`WaterRocket`** (password **`razzo1234`**).
-Collegati con telefono o PC e apri **http://192.168.4.1** (o http://rocket.local):
+Collegati con telefono o PC e apri **http://192.168.4.1** (o http://rocket.local).
+Funziona senza internet (nessuna libreria esterna nella pagina).
 
-- stato e avvio/stop della registrazione
-- anteprima della camera (foto singola, utile per puntarla)
-- elenco registrazioni con download dei file ed eliminazione
-- **▶ Guarda**: rivede il volo nel browser, video sincronizzato con l'audio
+Ogni registrazione è un **lancio**:
+
+- **Elenco lanci**: schede con miniatura, data/ora, durata e parametri principali;
+  avvio/stop di un nuovo lancio dall'header; anteprima camera; export di tutti i lanci
+  in un'unica tabella CSV per confrontarli
+- **Pagina del lancio**: player con audio, barra di scorrimento, avanzamento
+  frame per frame (←/→, spazio) e rallentatore fino a 0.1×; parametri di lancio
+  (bottiglia, acqua, pressione, massa, quota, luogo, note) salvati in `launch.json`;
+  download del video con audio (.avi), dei dati del lancio (.json/.csv) e dei file grezzi
+- **Dati sensori**: se nella cartella del lancio c'è `sensors.csv` (prima colonna =
+  tempo in ms dall'inizio della registrazione, poi una colonna per grandezza, es.
+  `t_ms,alt_m,acc_g`) ogni colonna diventa un grafico sincronizzato con il video
+
+Data e ora vengono da internet (NTP) quando lo XIAO è collegato a una rete, altrimenti
+dal browser al primo accesso alla pagina.
+
+Il server HTTP è asincrono (ESPAsyncWebServer): serve più richieste in parallelo
+(stato, miniature, download) mentre la registrazione continua sui task dedicati.
 
 **Collegarsi a una rete esistente** (es. hotspot del telefono): copia
 `include/secrets.example.h` in `include/secrets.h` (escluso da git) e inserisci nome
