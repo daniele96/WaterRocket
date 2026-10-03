@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 500" width="820" height="500" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Pinout XIAO ESP32-S3 Sense con le assegnazioni del progetto</title>
+  <rect x="1" y="1" width="818" height="498" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="410" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1f2328">XIAO ESP32-S3 Sense — pinout del progetto</text>
+  <text x="410" y="56" text-anchor="middle" font-size="13" fill="#57606a">vista dall'alto, USB-C in alto</text>
+
+  <!-- scheda -->
+  <rect x="355" y="96" width="110" height="34" rx="8" fill="#a8b1bb" stroke="#6e7781"/>
+  <text x="410" y="118" text-anchor="middle" font-size="12" font-weight="600" fill="#24292f">USB-C</text>
+  <rect x="320" y="120" width="180" height="310" rx="14" fill="#1f2a37" stroke="#0d1117" stroke-width="2"/>
+  <text x="410" y="262" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">XIAO</text>
+  <text x="410" y="282" text-anchor="middle" font-size="12" fill="#c9d1d9">ESP32-S3</text>
+  <text x="410" y="300" text-anchor="middle" font-size="12" fill="#c9d1d9">Sense</text>
+
+  <!-- pad: sinistra D0-D6, destra 5V GND 3V3 D10 D9 D8 D7 -->
+  <g fill="#d4a017" stroke="#8a6a0a" stroke-width="1.5">
+    <circle cx="336" cy="150" r="9"/><circle cx="336" cy="190" r="9"/><circle cx="336" cy="230" r="9"/>
+    <circle cx="336" cy="270" r="9"/><circle cx="336" cy="310" r="9"/><circle cx="336" cy="350" r="9"/>
+    <circle cx="336" cy="390" r="9"/>
+    <circle cx="484" cy="150" r="9"/><circle cx="484" cy="190" r="9"/><circle cx="484" cy="230" r="9"/>
+    <circle cx="484" cy="270" r="9"/><circle cx="484" cy="310" r="9"/><circle cx="484" cy="350" r="9"/>
+    <circle cx="484" cy="390" r="9"/>
+  </g>
+
+  <!-- etichette sinistra -->
+  <g font-size="13" fill="#1f2328" text-anchor="end">
+    <text x="318" y="155">D0 · GPIO1</text>
+    <text x="318" y="195">D1 · GPIO2</text>
+    <text x="318" y="235">D2 · GPIO3</text>
+    <text x="318" y="275">D3 · GPIO4</text>
+    <text x="318" y="315">D4 · GPIO5</text>
+    <text x="318" y="355">D5 · GPIO6</text>
+    <text x="318" y="395">D6 · GPIO43</text>
+  </g>
+  <!-- ruoli sinistra -->
+  <g font-size="12" font-weight="600" text-anchor="middle">
+    <rect x="30" y="137" width="190" height="26" rx="6" fill="#eaeef2" stroke="#afb8c1"/>
+    <text x="125" y="155" fill="#57606a">libero · ADC1 (partitore batt.)</text>
+    <rect x="30" y="177" width="190" height="26" rx="6" fill="#ffffff" stroke="#24292f" stroke-width="2"/>
+    <text x="125" y="195" fill="#24292f">CICALINO +</text>
+    <rect x="30" y="217" width="190" height="26" rx="6" fill="#ffebe9" stroke="#cf222e"/>
+    <text x="125" y="235" fill="#cf222e">NON USARE (strapping)</text>
+    <rect x="30" y="257" width="190" height="26" rx="6" fill="#2a9d3f"/>
+    <text x="125" y="275" fill="#ffffff">ANELLO LED · DIN</text>
+    <rect x="30" y="297" width="190" height="26" rx="6" fill="#1d6fd8"/>
+    <text x="125" y="315" fill="#ffffff">I2C SDA</text>
+    <rect x="30" y="337" width="190" height="26" rx="6" fill="#e0b000"/>
+    <text x="125" y="355" fill="#24292f">I2C SCL</text>
+    <rect x="30" y="377" width="190" height="26" rx="6" fill="#eaeef2" stroke="#afb8c1"/>
+    <text x="125" y="395" fill="#57606a">libero · UART TX</text>
+  </g>
+  <g stroke="#8c959f" stroke-width="1.2" stroke-dasharray="3 3">
+    <line x1="220" y1="150" x2="238" y2="150"/><line x1="220" y1="190" x2="238" y2="190"/>
+    <line x1="220" y1="230" x2="238" y2="230"/><line x1="220" y1="270" x2="238" y2="270"/>
+    <line x1="220" y1="310" x2="238" y2="310"/><line x1="220" y1="350" x2="238" y2="350"/>
+    <line x1="220" y1="390" x2="238" y2="390"/>
+  </g>
+
+  <!-- etichette destra -->
+  <g font-size="13" fill="#1f2328">
+    <text x="502" y="155">5V</text>
+    <text x="502" y="195">GND</text>
+    <text x="502" y="235">3V3</text>
+    <text x="502" y="275">D10 · GPIO9</text>
+    <text x="502" y="315">D9 · GPIO8</text>
+    <text x="502" y="355">D8 · GPIO7</text>
+    <text x="502" y="395">D7 · GPIO44</text>
+  </g>
+  <g font-size="12" font-weight="600" text-anchor="middle">
+    <rect x="600" y="137" width="190" height="26" rx="6" fill="#eaeef2" stroke="#afb8c1"/>
+    <text x="695" y="155" fill="#57606a">non alimentato a batteria</text>
+    <rect x="600" y="177" width="190" height="26" rx="6" fill="#24292f"/>
+    <text x="695" y="195" fill="#ffffff">GND comune</text>
+    <rect x="600" y="217" width="190" height="26" rx="6" fill="#f77f00"/>
+    <text x="695" y="235" fill="#ffffff">3V3 → sensori I2C</text>
+    <rect x="600" y="257" width="190" height="26" rx="6" fill="#d8dee4" stroke="#8c959f"/>
+    <text x="695" y="275" fill="#24292f">🔒 microSD MOSI</text>
+    <rect x="600" y="297" width="190" height="26" rx="6" fill="#d8dee4" stroke="#8c959f"/>
+    <text x="695" y="315" fill="#24292f">🔒 microSD MISO</text>
+    <rect x="600" y="337" width="190" height="26" rx="6" fill="#d8dee4" stroke="#8c959f"/>
+    <text x="695" y="355" fill="#24292f">🔒 microSD SCK</text>
+    <rect x="600" y="377" width="190" height="26" rx="6" fill="#eaeef2" stroke="#afb8c1"/>
+    <text x="695" y="395" fill="#57606a">libero · UART RX</text>
+  </g>
+  <g stroke="#8c959f" stroke-width="1.2" stroke-dasharray="3 3">
+    <line x1="582" y1="150" x2="600" y2="150"/><line x1="582" y1="190" x2="600" y2="190"/>
+    <line x1="582" y1="230" x2="600" y2="230"/><line x1="582" y1="270" x2="600" y2="270"/>
+    <line x1="582" y1="310" x2="600" y2="310"/><line x1="582" y1="350" x2="600" y2="350"/>
+    <line x1="582" y1="390" x2="600" y2="390"/>
+  </g>
+
+  <text x="410" y="462" text-anchor="middle" font-size="12.5" fill="#57606a">Camera, microfono e microSD sono sulla shield Sense: non si cablano.</text>
+  <text x="410" y="481" text-anchor="middle" font-size="12.5" fill="#57606a">GPIO21 (LED onboard) è il CS della microSD · retro: pad BAT+ / BAT− (BAT− lato USB-C)</text>
+</svg>

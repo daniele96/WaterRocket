@@ -383,7 +383,7 @@ strapping (selezione JTAG), quindi comunque da evitare.
 | D1 | 2 | **usato** | **Buzzer attivo 12095** |
 | D4 | 5 | **usato** | **I2C SDA** → BMP280 + MPU6050 |
 | D5 | 6 | **usato** | **I2C SCL** → BMP280 + MPU6050 |
-| D3 | 4 | libero | LED di stato esterno *(opzionale)* |
+| D3 | 4 | **usato** | **Anello LED WS2812B 8 LED** (dati, via 330 Ω) — vedi [cablaggio.md](cablaggio.md) |
 | D0 | 1 | libero (ADC1) | Partitore tensione batteria *(opzionale)* |
 | D6 | 43 | libero (UART0 TX) | — *(GPS NEO-M8N se mai servisse)* |
 | D7 | 44 | libero (UART0 RX) | — *(idem)* |
@@ -393,7 +393,7 @@ strapping (selezione JTAG), quindi comunque da evitare.
 | D10 | 9 | 🔒 SPI MOSI | microSD |
 | — | 21 | 🔒 SD_CS (era il LED) | microSD |
 
-**Bilancio: il progetto usa 3 pad su 8 disponibili.** Restano liberi D0, D3, D6, D7
+**Bilancio: il progetto usa 4 pad su 8 disponibili.** Restano liberi D0, D6, D7
 (più D2 da non toccare). Margine ampio: la configurazione non è nemmeno stretta.
 
 - **Niente UART** nella configurazione scelta: D6/D7 restano liberi. Se un giorno
@@ -404,8 +404,9 @@ strapping (selezione JTAG), quindi comunque da evitare.
   si spegne e basta. Non è un rischio concreto (400 mAh = 1,5–2,5 h contro pochi
   minuti di sessione), e la cella è comunque protetta dal suo PCM contro la scarica
   profonda. Basta partire carichi.
-- **LED di stato: opzionale.** Serve solo perché quello onboard è occupato da SD_CS;
-  se non serve un indicatore armato/disarmato visivo, si può saltare.
+- **Indicatore visivo: anello WS2812B 8 LED su D3.** Sostituisce il LED onboard
+  (occupato da SD_CS) e fa anche da luce di ritrovamento e di visibilità in volo.
+  Va alimentato da BAT+, non dal 3V3: vedi [cablaggio.md §7](cablaggio.md#7-anello-led-ws2812b-8-led).
 
 #### Bus I2C
 
@@ -425,14 +426,17 @@ parallelo il valore risultante resta accettabile a 3,3 V, non serve aggiungerne.
 
 #### Schema di cablaggio
 
+📐 **Guida passo-passo con schemi, collaudo e checklist: [cablaggio.md](cablaggio.md).**
+
 ```
 XIAO ESP32-S3 Sense
 ├── D4 / D5       → I2C: BMP280 (0x76) + MPU6050 (0x68)
 ├── D1            → buzzer attivo 12095 (diretto, 25 mA)
 ├── D8/D9/D10+G21 → 🔒 microSD (SPI, slot sulla shield Sense)
 │
+├── D3            → anello LED WS2812B 8 LED (dati via 330 Ω, VDD da BAT+)
+│
 │   -- opzionali, pad già liberi --
-├── D3            → LED di stato esterno (quello onboard è occupato da SD_CS)
 ├── D0            → partitore 2×100 kΩ da BAT+ (lettura tensione, ADC1)
 ├── D6 / D7       → UART GPS NEO-M8N
 ├── Camera OV3660 → FPC dedicato, GPIO interni (nessun pad occupato)

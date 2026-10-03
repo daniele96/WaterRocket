@@ -17,6 +17,15 @@ La guida completa è in **[WaterRocket.md](WaterRocket.md)** e include:
 - **Sicurezza** ⚠️
 - **Link di documentazione** — risorse verificate (NASA, Air Command, WRA2, ...)
 - **Stampa 3D** 🖨️ — cosa stampare, materiali e dove trovare i modelli STL
+- **Elettronica di bordo** 🔌 — XIAO ESP32-S3 Sense, sensori, BOM
+
+Altri documenti:
+
+- **[cablaggio.md](cablaggio.md)** — come collegare batteria, sensori I2C, cicalino
+  e anello LED, con schemi, collaudo e checklist pre-volo
+- **[firmware/](firmware/)** — registratore di volo (video + audio su microSD) e
+  piattaforma web dei lanci via WiFi
+- **[lab.md](lab.md)** — laboratorio con i bambini
 
 ## ⚠️ Sicurezza
 

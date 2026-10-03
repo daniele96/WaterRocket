@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Anello WS2812B 8 LED: VDD da BAT+, GND comune, DIN da D3 tramite 330 ohm, condensatore 100 uF</title>
+  <rect x="1" y="1" width="898" height="468" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="450" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1f2328">Anello LED WS2812B (8 LED) → D3</text>
+  <text x="450" y="56" text-anchor="middle" font-size="13" fill="#57606a">alimentato dalla batteria (BAT+), dati a 3,3 V con resistenza in serie</text>
+
+  <!-- XIAO -->
+  <rect x="40" y="110" width="140" height="240" rx="12" fill="#1f2a37" stroke="#0d1117" stroke-width="2"/>
+  <text x="95" y="236" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">XIAO</text>
+  <g fill="#d4a017" stroke="#8a6a0a" stroke-width="1.5"><circle cx="180" cy="150" r="7"/><circle cx="180" cy="230" r="7"/><circle cx="180" cy="310" r="7"/></g>
+  <g font-size="12" fill="#ffffff" text-anchor="end" font-weight="600"><text x="168" y="154">BAT+</text><text x="168" y="234">GND</text><text x="168" y="314">D3</text></g>
+  <text x="110" y="375" text-anchor="middle" font-size="11.5" fill="#57606a">BAT+: pad sul retro o</text>
+  <text x="110" y="391" text-anchor="middle" font-size="11.5" fill="#57606a">lato scheda del pigtail</text>
+
+  <!-- fili -->
+  <path d="M180 150 L 600 150 L 600 300" fill="none" stroke="#d62828" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M180 230 L 640 230 L 640 300" fill="none" stroke="#24292f" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M180 310 L 330 310" fill="none" stroke="#2a9d3f" stroke-width="4.5"/>
+  <path d="M420 310 L 540 310 L 540 360 L 680 360 L 680 300" fill="none" stroke="#2a9d3f" stroke-width="4.5" stroke-linejoin="round"/>
+  <text x="250" y="141" font-size="12.5" font-weight="600" fill="#d62828">BAT+ 3,7–4,2 V</text>
+  <text x="250" y="221" font-size="12.5" font-weight="600" fill="#24292f">GND comune</text>
+  <text x="200" y="300" font-size="12.5" font-weight="600" fill="#2a9d3f">dati (GPIO4)</text>
+
+  <!-- resistenza 330 -->
+  <path d="M330 310 L 340 310 L 346 298 L 358 322 L 370 298 L 382 322 L 394 298 L 406 322 L 412 310 L 420 310" fill="none" stroke="#1f2328" stroke-width="2.5" stroke-linejoin="round"/>
+  <text x="375" y="345" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">330 Ω</text>
+  <text x="375" y="362" text-anchor="middle" font-size="11" fill="#57606a">vicino all'anello</text>
+
+  <!-- condensatore 100uF tra BAT+ e GND -->
+  <g stroke="#1f2328" stroke-width="2.5">
+    <line x1="520" y1="150" x2="520" y2="178"/>
+    <line x1="502" y1="178" x2="538" y2="178"/>
+    <path d="M502 192 Q 520 184 538 192" fill="none"/>
+    <line x1="520" y1="188" x2="520" y2="230"/>
+  </g>
+  <circle cx="520" cy="150" r="5" fill="#1f2328"/><circle cx="520" cy="230" r="5" fill="#1f2328"/>
+  <text x="508" y="172" text-anchor="end" font-size="12" font-weight="700" fill="#1f2328">+</text>
+  <text x="472" y="200" text-anchor="end" font-size="13" font-weight="700" fill="#1f2328">100 µF</text>
+
+  <!-- anello -->
+  <circle cx="760" cy="200" r="98" fill="#1f2a37"/>
+  <circle cx="760" cy="200" r="58" fill="#ffffff"/>
+  <g stroke="#57606a" stroke-width="1.5">
+    <rect x="747" y="111" width="26" height="26" rx="3" fill="#ff5a5a"/>
+    <rect x="802" y="134" width="26" height="26" rx="3" fill="#ffb347"/>
+    <rect x="825" y="187" width="26" height="26" rx="3" fill="#ffe156"/>
+    <rect x="802" y="240" width="26" height="26" rx="3" fill="#6ee07a"/>
+    <rect x="747" y="263" width="26" height="26" rx="3" fill="#5ad1ff"/>
+    <rect x="692" y="240" width="26" height="26" rx="3" fill="#5a8bff"/>
+    <rect x="669" y="187" width="26" height="26" rx="3" fill="#b07aff"/>
+    <rect x="692" y="134" width="26" height="26" rx="3" fill="#ffffff"/>
+  </g>
+  <text x="760" y="196" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">WS2812B</text>
+  <text x="760" y="214" text-anchor="middle" font-size="12" fill="#57606a">8 LED · Ø ~32 mm</text>
+
+  <!-- pad anello (in basso a sinistra, collegati con le linee) -->
+  <g fill="#d4a017" stroke="#8a6a0a" stroke-width="1.5"><circle cx="600" cy="300" r="7"/><circle cx="640" cy="300" r="7"/><circle cx="680" cy="300" r="7"/><circle cx="720" cy="300" r="7"/></g>
+  <g font-size="11.5" font-weight="700" text-anchor="middle" fill="#1f2328">
+    <text x="600" y="327">VDD</text><text x="640" y="327">GND</text><text x="680" y="386" fill="#2a9d3f">DIN</text><text x="720" y="327">DOUT</text>
+  </g>
+  <text x="720" y="343" text-anchor="middle" font-size="11" fill="#cf222e">non collegato</text>
+  <text x="752" y="327" font-size="11" fill="#57606a">← pad sul retro dell'anello</text>
+  <path d="M600 293 Q 630 260 690 262 M640 293 Q 660 275 700 270 M680 293 Q 690 285 712 278" fill="none" stroke="#8c959f" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- note -->
+  <rect x="40" y="410" width="820" height="44" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="450" y="429" text-anchor="middle" font-size="12.5" fill="#1f2328">Fino a ~480 mA (8 × 60 mA in bianco pieno): per questo VDD va su BAT+ e non sul 3V3.</text>
+  <text x="450" y="446" text-anchor="middle" font-size="12.5" fill="#1f2328">Luminosità a terra 10–20 % via firmware · filo dati ≤ 15 cm · le sigle dei pad cambiano tra produttori (5V/VCC, DI/IN, DO/OUT)</text>
+</svg>

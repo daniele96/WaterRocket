@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 520" width="920" height="520" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Bus I2C: BMP280 e MPU6050 collegati a D4 (SDA) e D5 (SCL) della XIAO</title>
+  <rect x="1" y="1" width="918" height="518" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="460" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1f2328">Bus I2C: BMP280 + MPU6050 sugli stessi 4 fili</text>
+  <text x="460" y="56" text-anchor="middle" font-size="13" fill="#57606a">punto = collegamento · incrocio senza punto = nessun contatto</text>
+
+  <!-- XIAO -->
+  <rect x="30" y="120" width="130" height="220" rx="12" fill="#1f2a37" stroke="#0d1117" stroke-width="2"/>
+  <text x="80" y="236" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">XIAO</text>
+  <g fill="#d4a017" stroke="#8a6a0a" stroke-width="1.5">
+    <circle cx="160" cy="150" r="7"/><circle cx="160" cy="200" r="7"/><circle cx="160" cy="250" r="7"/><circle cx="160" cy="300" r="7"/>
+  </g>
+  <g font-size="12" fill="#ffffff" text-anchor="end" font-weight="600">
+    <text x="148" y="154">3V3</text><text x="148" y="204">GND</text><text x="148" y="254">D4</text><text x="148" y="304">D5</text>
+  </g>
+
+  <!-- binari -->
+  <g stroke-width="4" stroke-linecap="round">
+    <line x1="160" y1="150" x2="840" y2="150" stroke="#f77f00"/>
+    <line x1="160" y1="200" x2="840" y2="200" stroke="#24292f"/>
+    <line x1="160" y1="250" x2="740" y2="250" stroke="#1d6fd8"/>
+    <line x1="160" y1="300" x2="700" y2="300" stroke="#e0b000"/>
+  </g>
+  <g font-size="12.5" font-weight="600">
+    <text x="180" y="141" fill="#c25e00">3V3</text>
+    <text x="180" y="191" fill="#24292f">GND</text>
+    <text x="180" y="241" fill="#1d6fd8">SDA · D4 / GPIO5</text>
+    <text x="180" y="291" fill="#9a7800">SCL · D5 / GPIO6</text>
+  </g>
+
+  <!-- discese verso BMP280 (pin a x 290..490) -->
+  <g stroke-width="3">
+    <line x1="290" y1="150" x2="290" y2="380" stroke="#f77f00"/>
+    <line x1="330" y1="200" x2="330" y2="380" stroke="#24292f"/>
+    <line x1="370" y1="300" x2="370" y2="380" stroke="#e0b000"/>
+    <line x1="410" y1="250" x2="410" y2="380" stroke="#1d6fd8"/>
+    <line x1="450" y1="150" x2="450" y2="380" stroke="#f77f00"/>
+    <line x1="490" y1="200" x2="490" y2="380" stroke="#24292f"/>
+  </g>
+  <!-- discese verso GY-521 (pin a x 580..860) -->
+  <g stroke-width="3">
+    <line x1="580" y1="150" x2="580" y2="380" stroke="#f77f00"/>
+    <line x1="620" y1="200" x2="620" y2="380" stroke="#24292f"/>
+    <line x1="660" y1="300" x2="660" y2="380" stroke="#e0b000"/>
+    <line x1="700" y1="250" x2="700" y2="380" stroke="#1d6fd8"/>
+    <line x1="820" y1="200" x2="820" y2="380" stroke="#24292f"/>
+  </g>
+  <!-- punti di giunzione -->
+  <g fill="#1f2328">
+    <circle cx="290" cy="150" r="5"/><circle cx="330" cy="200" r="5"/><circle cx="370" cy="300" r="5"/>
+    <circle cx="410" cy="250" r="5"/><circle cx="450" cy="150" r="5"/><circle cx="490" cy="200" r="5"/>
+    <circle cx="580" cy="150" r="5"/><circle cx="620" cy="200" r="5"/><circle cx="660" cy="300" r="5"/>
+    <circle cx="700" cy="250" r="5"/><circle cx="820" cy="200" r="5"/>
+  </g>
+
+  <!-- BMP280 -->
+  <rect x="270" y="380" width="240" height="96" rx="8" fill="#6f42c1" stroke="#4c2889" stroke-width="2"/>
+  <g fill="#d4a017" stroke="#8a6a0a"><circle cx="290" cy="392" r="6"/><circle cx="330" cy="392" r="6"/><circle cx="370" cy="392" r="6"/><circle cx="410" cy="392" r="6"/><circle cx="450" cy="392" r="6"/><circle cx="490" cy="392" r="6"/></g>
+  <g font-size="11" fill="#ffffff" text-anchor="middle" font-weight="600">
+    <text x="290" y="414">VCC</text><text x="330" y="414">GND</text><text x="370" y="414">SCL</text><text x="410" y="414">SDA</text><text x="450" y="414">CSB</text><text x="490" y="414">SDO</text>
+  </g>
+  <text x="390" y="444" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">BMP280 · indirizzo 0x76</text>
+  <text x="390" y="464" text-anchor="middle" font-size="11.5" fill="#e2d6f7">CSB→3V3 = modo I2C · SDO→GND = 0x76</text>
+
+  <!-- GY-521 -->
+  <rect x="560" y="380" width="320" height="96" rx="8" fill="#1d4e89" stroke="#0f2f57" stroke-width="2"/>
+  <g fill="#d4a017" stroke="#8a6a0a"><circle cx="580" cy="392" r="6"/><circle cx="620" cy="392" r="6"/><circle cx="660" cy="392" r="6"/><circle cx="700" cy="392" r="6"/><circle cx="740" cy="392" r="6"/><circle cx="780" cy="392" r="6"/><circle cx="820" cy="392" r="6"/><circle cx="860" cy="392" r="6"/></g>
+  <g font-size="11" fill="#ffffff" text-anchor="middle" font-weight="600">
+    <text x="580" y="414">VCC</text><text x="620" y="414">GND</text><text x="660" y="414">SCL</text><text x="700" y="414">SDA</text><text x="740" y="414">XDA</text><text x="780" y="414">XCL</text><text x="820" y="414">AD0</text><text x="860" y="414">INT</text>
+  </g>
+  <text x="720" y="444" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">MPU6050 (GY-521) · 0x68</text>
+  <text x="720" y="464" text-anchor="middle" font-size="11.5" fill="#c8dcf5">AD0→GND = 0x68 · XDA, XCL, INT non collegati</text>
+  <!-- n.c. -->
+  <g stroke="#cf222e" stroke-width="2.5">
+    <line x1="733" y1="360" x2="747" y2="374"/><line x1="747" y1="360" x2="733" y2="374"/>
+    <line x1="773" y1="360" x2="787" y2="374"/><line x1="787" y1="360" x2="773" y2="374"/>
+    <line x1="853" y1="360" x2="867" y2="374"/><line x1="867" y1="360" x2="853" y2="374"/>
+  </g>
+  <g stroke="#8c959f" stroke-width="2"><line x1="740" y1="374" x2="740" y2="386"/><line x1="780" y1="374" x2="780" y2="386"/><line x1="860" y1="374" x2="860" y2="386"/></g>
+
+  <text x="460" y="505" text-anchor="middle" font-size="12.5" fill="#57606a">Pull-up già presenti sui moduli · fili ≤ 10 cm, SDA/SCL intrecciati col GND · sensori solo a 3V3, mai BAT+</text>
+</svg>
