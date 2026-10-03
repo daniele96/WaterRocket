@@ -44,7 +44,12 @@ Collegati con telefono o PC e apri **http://192.168.4.1** (o http://rocket.local
 - elenco registrazioni con download dei file ed eliminazione
 - **▶ Guarda**: rivede il volo nel browser, video sincronizzato con l'audio
 
-SSID e password sono in `src/web_server.cpp`; per spegnere il WiFi imposta
+**Collegarsi a una rete esistente** (es. hotspot del telefono): copia
+`include/secrets.example.h` in `include/secrets.h` (escluso da git) e inserisci nome
+e password. Lo XIAO si collega a quella rete *e* tiene attiva `WaterRocket`; l'IP
+ottenuto viene stampato sulla seriale (comando `i`).
+
+SSID e password della rete `WaterRocket` sono in `src/web_server.cpp`; per spegnere il WiFi imposta
 `WIFI_ENABLED = false` in `src/main.cpp`.
 
 **Conversione in MP4** (sul PC, con ffmpeg; il valore di fps è in `info.txt`):

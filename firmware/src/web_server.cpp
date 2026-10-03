@@ -12,6 +12,11 @@
 #include "storage.h"
 #include "web_page.h"
 
+// Rete esistente a cui collegarsi (opzionale): vedi include/secrets.example.h
+#if __has_include("secrets.h")
+#include "secrets.h"
+#endif
+
 // Rete creata dallo XIAO: funziona anche al campo di lancio, senza router.
 static constexpr const char *AP_SSID = "WaterRocket";
 static constexpr const char *AP_PASS = "razzo1234";  // almeno 8 caratteri
@@ -193,7 +198,16 @@ static void handleSnapshot() {
 bool begin(const RecorderHooks &hooks) {
   s_hooks = hooks;
 
+#ifdef WIFI_STA_SSID
+  // Access point + client: la rete "WaterRocket" resta sempre disponibile
+  // (al campo di lancio), e in più ci si collega alla rete configurata.
+  // Nota: l'AP si sposta sul canale della rete a cui ci si collega.
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.setAutoReconnect(true);
+  WiFi.begin(WIFI_STA_SSID, WIFI_STA_PASS);
+#else
   WiFi.mode(WIFI_AP);
+#endif
   if (!WiFi.softAP(AP_SSID, AP_PASS)) {
     log_e("Avvio access point fallito");
     return false;
@@ -219,7 +233,23 @@ bool begin(const RecorderHooks &hooks) {
 }
 
 void handle() {
-  if (s_started) s_server.handleClient();
+  if (!s_started) return;
+  s_server.handleClient();
+
+#ifdef WIFI_STA_SSID
+  // Segnala sulla seriale quando la connessione alla rete esterna cambia
+  static bool wasConnected = false;
+  const bool connected = WiFi.status() == WL_CONNECTED;
+  if (connected != wasConnected) {
+    wasConnected = connected;
+    if (connected) {
+      Serial.printf("WiFi:      collegato a \"%s\" -> http://%s\n", WIFI_STA_SSID,
+                    WiFi.localIP().toString().c_str());
+    } else {
+      Serial.printf("WiFi:      scollegato da \"%s\"\n", WIFI_STA_SSID);
+    }
+  }
+#endif
 }
 
 void printInfo() {
@@ -229,6 +259,14 @@ void printInfo() {
   }
   Serial.printf("WiFi:      rete \"%s\" (password \"%s\") -> http://%s o http://%s.local\n",
                 AP_SSID, AP_PASS, WiFi.softAPIP().toString().c_str(), HOSTNAME);
+#ifdef WIFI_STA_SSID
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.printf("           collegato a \"%s\" -> http://%s\n", WIFI_STA_SSID,
+                  WiFi.localIP().toString().c_str());
+  } else {
+    Serial.printf("           non collegato a \"%s\"\n", WIFI_STA_SSID);
+  }
+#endif
 }
 
 }  // namespace Web
