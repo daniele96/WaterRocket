@@ -23,7 +23,8 @@ sulla microSD, in una cartella nuova per ogni sessione: `/REC_0001/`, `/REC_0002
 | `info.txt`    | riepilogo: frame, durata, fps medi, errori             |
 
 **Avvio/stop:** pulsante **BOOT**, oppure da monitor seriale `r` (avvia), `s` (ferma),
-`i` (info), `h` (aiuto). Per partire da soli all'accensione (sul razzo, senza PC)
+`i` (info), `l` (elenca file su SD), `h` (aiuto), `F` (formatta la SD in FAT32 se
+non è già FAT, con conferma `Y`: utile se non hai un lettore di microSD). Per partire da soli all'accensione (sul razzo, senza PC)
 imposta `AUTO_RECORD = true` in `src/main.cpp`.
 
 I file vengono salvati su SD ogni ~1-2 s, quindi se l'alimentazione salta si perde
