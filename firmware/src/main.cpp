@@ -4,6 +4,7 @@
 // Avvio/stop: pulsante BOOT oppure comandi seriali:
 //   r = avvia, s = ferma, i = info, l = elenca file,
 //   h = aiuto, F = formatta SD (con conferma)
+// Oppure dal browser: rete WiFi "WaterRocket" -> http://192.168.4.1
 //
 // Nota: il LED utente (GPIO21) non si usa perché condivide il pin con il CS della SD.
 
@@ -14,9 +15,12 @@
 #include "board_pins.h"
 #include "camera_rec.h"
 #include "storage.h"
+#include "web_server.h"
 
 // true = inizia a registrare appena acceso (utile sul razzo, senza PC)
 static constexpr bool AUTO_RECORD = false;
+// true = crea la rete WiFi con la pagina web (scarica file, anteprima, player)
+static constexpr bool WIFI_ENABLED = true;
 static constexpr uint32_t STATUS_MS = 2000;
 static constexpr uint32_t DEBOUNCE_MS = 50;
 
@@ -43,6 +47,7 @@ static void printChipInfo() {
   Serial.printf("Camera:    %s\n", CameraRec::isReady() ? CameraRec::sensorName() : "non inizializzata");
   Serial.printf("Microfono: %s\n", AudioRec::isReady() ? "ok" : "non inizializzato");
   Storage::printInfo();
+  Web::printInfo();
 }
 
 static void printHelp() {
@@ -192,6 +197,10 @@ void setup() {
   Storage::begin();
   CameraRec::begin();
   AudioRec::begin();
+  if (WIFI_ENABLED) {
+    Web::begin({startRecording, stopRecording, isRecording,
+                [] () -> const String & { return s_sessionDir; }});
+  }
 
   printChipInfo();
   printHelp();
@@ -202,6 +211,7 @@ void setup() {
 void loop() {
   handleButton();
   handleSerial();
+  Web::handle();
 
   static uint32_t lastStatus = 0;
   if (millis() - lastStatus >= STATUS_MS) {

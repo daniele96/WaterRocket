@@ -34,6 +34,19 @@ solo l'ultimo secondo.
 su escono formattate exFAT: riformattale FAT32, ad esempio da prompt
 `format X: /FS:FAT32 /Q` (Windows 11 recenti) oppure con *guiformat* / *Rufus*.
 
+### Pagina web (WiFi)
+
+All'accensione lo XIAO crea la rete WiFi **`WaterRocket`** (password **`razzo1234`**).
+Collegati con telefono o PC e apri **http://192.168.4.1** (o http://rocket.local):
+
+- stato e avvio/stop della registrazione
+- anteprima della camera (foto singola, utile per puntarla)
+- elenco registrazioni con download dei file ed eliminazione
+- **▶ Guarda**: rivede il volo nel browser, video sincronizzato con l'audio
+
+SSID e password sono in `src/web_server.cpp`; per spegnere il WiFi imposta
+`WIFI_ENABLED = false` in `src/main.cpp`.
+
 **Conversione in MP4** (sul PC, con ffmpeg; il valore di fps è in `info.txt`):
 
 ```sh
