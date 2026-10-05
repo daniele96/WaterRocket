@@ -9,7 +9,7 @@
 //   info.txt     scritto dal firmware (ora di inizio, frame, fps, durata...)
 //   launch.json  scritto dalla pagina (nome, parametri, note)
 //   video.mjpeg + frames.csv + audio.wav  registrazione
-//   sensors.csv  (futuro) prima colonna = tempo in ms, poi una colonna per grandezza:
+//   sensors.csv  accelerometro/giroscopio (flight.cpp), prima colonna = tempo in ms, poi una colonna per grandezza:
 //                ogni colonna diventa un grafico in automatico
 static const char WEB_PAGE[] PROGMEM = R"HTML(<!doctype html>
 <html lang="it">
@@ -24,9 +24,9 @@ static const char WEB_PAGE[] PROGMEM = R"HTML(<!doctype html>
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 a{color:var(--acc);text-decoration:none}
 header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--bd)}
-.hin{max-width:1040px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.hin{max-width:1800px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
 .brand{font-weight:700;font-size:17px;color:var(--fg);white-space:nowrap}
-main{max-width:1040px;margin:0 auto;padding:16px}
+main{max-width:1800px;margin:0 auto;padding:16px}
 h2{font-size:18px;margin:0}
 h3{font-size:15px;margin:0 0 10px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:var(--sh)}
@@ -40,6 +40,7 @@ button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
 button.rec{background:var(--rec);border-color:var(--rec);color:#fff}
 button.danger{color:var(--rec)}
 button:disabled{opacity:.45;cursor:default}
+[hidden]{display:none!important}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--mut);display:inline-block;flex:none}
 .dot.on{background:var(--rec);animation:b 1s infinite}
 @keyframes b{50%{opacity:.25}}
@@ -58,7 +59,8 @@ button:disabled{opacity:.45;cursor:default}
 .chip{background:var(--acc2);color:var(--acc);font-size:12px;padding:2px 8px;border-radius:999px}
 .empty{text-align:center;padding:40px 16px}
 .view{width:100%;border-radius:8px;background:#000;display:block;aspect-ratio:4/3;object-fit:contain}
-.cols{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;align-items:start}
+#pimg{max-height:72vh}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
 @media (max-width:820px){.cols{grid-template-columns:1fr}}
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
 .stat b{display:block;font-size:16px}
@@ -82,10 +84,10 @@ input.title:hover,input.title:focus{border-color:var(--bd);background:var(--card
 .dl a{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--bd)}
 .dl a:first-child{border-top:0}
 .chart{margin-top:12px}
-.chart canvas{width:100%;height:160px;display:block;cursor:crosshair}
+.chart canvas{width:100%;height:220px;display:block;cursor:crosshair;touch-action:pan-y}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
-footer{max-width:1040px;margin:0 auto;padding:4px 16px 24px;color:var(--mut);font-size:12px}
+footer{max-width:1800px;margin:0 auto;padding:4px 16px 24px;color:var(--mut);font-size:12px}
 </style>
 </head>
 <body>
@@ -93,6 +95,7 @@ footer{max-width:1040px;margin:0 auto;padding:4px 16px 24px;color:var(--mut);fon
   <a class="brand" href="#/">🚀 Water Rocket</a>
   <div class="row" style="flex-wrap:nowrap;min-width:0">
     <span id="recdot" class="dot"></span><span id="recinfo">...</span>
+    <button id="buzzbtn" class="rec" onclick="stopBuzzer()" hidden>🔕 Spegni cicalino</button>
     <button id="recbtn" class="rec" onclick="toggleRec()">● Nuovo lancio</button>
   </div>
 </div></header>
@@ -197,9 +200,20 @@ async function pollStatus() {
     fetch('/api/time?epoch=' + Math.floor(Date.now() / 1000), {method: 'POST'});
   }
   $('#recdot').className = 'dot' + (s.recording ? ' on' : '');
-  $('#recinfo').textContent = s.recording
+  // Fase del volo dall'accelerometro: 0 a terra, 1 in volo, 2 atterrato
+  const phase = s.phase === 1 ? ' · 🚀 IN VOLO'
+    : s.phase === 2 ? ` · 🎯 ATTERRATO (picco ${s.peakG.toFixed(1)} g)` : '';
+  $('#recinfo').textContent = (s.testMode ? '🧪 PROVA · ' : '') + (s.recording
     ? `REC ${s.secs.toFixed(1)} s · ${s.frames} frame · ${s.fps.toFixed(1)} fps`
-    : s.sd ? 'Pronto' : 'SD non montata';
+    : s.sd ? 'Pronto' : 'SD non montata') + phase;
+  updateSim(s);
+  const tb = $('#testbtn');
+  if (tb) {
+    tb.textContent = testLabel();
+    tb.className = s.testMode ? 'pri' : '';
+  }
+  // Il cicalino suona da atterrato finché qualcuno non lo spegne
+  $('#buzzbtn').hidden = !s.buzzer;
   const b = $('#recbtn');
   b.textContent = s.recording ? '■ Stop' : '● Nuovo lancio';
   b.className = s.recording ? '' : 'rec';
@@ -224,6 +238,17 @@ async function toggleRec() {
     toast('Errore: ' + e.message);
   }
   // Il comando viene eseguito dallo XIAO nel giro di pochi ms: poi aggiorno lo stato
+  await new Promise(r => setTimeout(r, 400));
+  await pollStatus();
+}
+
+async function stopBuzzer() {
+  try {
+    await api('/api/buzzer/stop', {method: 'POST'});
+    toast('Cicalino spento · pronto per il prossimo lancio');
+  } catch (e) {
+    toast('Errore: ' + e.message);
+  }
   await new Promise(r => setTimeout(r, 400));
   await pollStatus();
 }
@@ -280,9 +305,32 @@ function renderHome() {
     <div class="row between" style="margin-bottom:14px">
       <h2>Lanci <span class="mut">(${L.length})</span></h2>
       <div class="row">
+        <button onclick="toggleSim()">🧪 Pannello prova</button>
         <button onclick="togglePreview()">📷 Anteprima camera</button>
         <button onclick="exportTable()" ${L.length ? '' : 'disabled'}>⬇ Tabella lanci (CSV)</button>
       </div>
+    </div>
+    <div id="simpanel" class="card ${S.simOpen ? '' : 'hidden'}">
+      <div class="row between"><b>🧪 Pannello di prova</b><span id="simphase" class="mut"></span></div>
+      <div class="row" style="margin-top:10px;flex-wrap:wrap">
+        <button class="pri" onclick="sim('launch')">🚀 Simula decollo</button>
+        <button onclick="sim('land')">🎯 Simula atterraggio</button>
+        <button class="danger" onclick="sim('abort')">⛔ Interrompi (torna a terra)</button>
+      </div>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap">
+        <button onclick="sim('buzz_on')">🔔 Accendi cicalino</button>
+        <button onclick="sim('buzz_off')">🔕 Spegni cicalino</button>
+        <button id="testbtn" onclick="toggleTestMode()" title="Decollo con un colpo della mano (2 g per 10 ms) invece della spinta vera (2,5 g per 30 ms). Registra da sola ogni prova: parte all'attivazione e si ferma 3 s dopo l'atterraggio. Anello LED al massimo al 25% (sull'USB)">${testLabel()}</button>
+      </div>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap">
+        <b style="font-size:14px">💡 Anello</b>
+        <button id="ledauto" onclick="ledAuto()" title="Colori secondo la fase: verde pronto, rosso pulsante in registrazione, bianco in volo, lampo all'atterraggio, rosso fisso se manca SD o sensore">Automatico</button>
+        <input id="ledcolor" type="color" value="#ffffff" oninput="ledManual()" title="Colore manuale">
+        <input id="ledpct" type="range" min="0" max="100" value="10" oninput="ledManual()" style="width:140px" title="Luminosità manuale">
+        <span id="ledpctv" class="mut tnum">10%</span>
+        <button onclick="ledOff()">Spegni</button>
+      </div>
+      <div id="simdata" class="mut tnum" style="margin-top:10px;font-size:13px"></div>
     </div>
     <div id="preview" class="card hidden">
       <img id="snap" class="view" alt="">
@@ -294,6 +342,111 @@ function renderHome() {
     ${L.length ? `<div class="grid">${L.map(launchCard).join('')}</div>`
       : `<div class="card empty"><div style="font-size:40px">🚀</div><p>Nessun lancio registrato.</p>
          <p class="mut">Premi <b>● Nuovo lancio</b> qui sopra o il pulsante BOOT sulla scheda.</p></div>`}`;
+}
+
+// ---------- pannello di prova: simulazione del volo e cicalino ----------
+const PHASES = {0: '🟢 A TERRA', 1: '🚀 IN VOLO', 2: '🎯 ATTERRATO'};
+
+function toggleSim() {
+  S.simOpen = !S.simOpen;
+  $('#simpanel').classList.toggle('hidden', !S.simOpen);
+  // Pannello aperto: stato ogni 0,5 s per vedere i valori del sensore dal vivo
+  clearInterval(S.simTimer);
+  if (S.simOpen) S.simTimer = setInterval(pollStatus, 500);
+  pollStatus();
+}
+
+async function sim(action) {
+  const msg = {launch: 'Decollo simulato', land: 'Atterraggio simulato',
+    abort: 'Interrotto: di nuovo A TERRA', buzz_on: 'Cicalino acceso', buzz_off: 'Cicalino spento'};
+  try {
+    await api('/api/sim?action=' + action, {method: 'POST'});
+    toast(msg[action]);
+  } catch (e) {
+    toast('Errore: ' + e.message);
+  }
+  await new Promise(r => setTimeout(r, 300));
+  await pollStatus();
+}
+
+// ---------- anello LED: automatico (fasi del volo) o manuale ----------
+let ledTimer = 0;
+
+function ledSend(query) {
+  return api('/api/led?' + query, {method: 'POST'}).catch(e => toast('Errore: ' + e.message));
+}
+
+// Il cursore manda decine di eventi al secondo: si invia solo l'ultimo valore ogni 120 ms
+function ledManual() {
+  $('#ledpctv').textContent = $('#ledpct').value + '%';
+  clearTimeout(ledTimer);
+  ledTimer = setTimeout(() => {
+    ledTimer = 0;
+    ledSend(`mode=manual&color=${$('#ledcolor').value.slice(1)}&pct=${$('#ledpct').value}`).then(pollStatus);
+  }, 120);
+}
+
+function ledOff() {
+  $('#ledpct').value = 0;
+  ledManual();
+}
+
+async function ledAuto() {
+  await ledSend('mode=auto');
+  toast('Anello in automatico: colori secondo la fase del volo');
+  await pollStatus();
+}
+
+function updateLed(s) {
+  if (!s.led || !$('#ledauto')) return;
+  $('#ledauto').className = s.led.manual ? '' : 'pri';
+  // Non sovrascrivo i controlli mentre l'utente li sta usando
+  const busy = ledTimer || ['ledcolor', 'ledpct'].includes(document.activeElement?.id);
+  if (!busy) {
+    $('#ledcolor').value = '#' + s.led.color;
+    $('#ledpct').value = s.led.pct;
+    $('#ledpctv').textContent = s.led.pct + '%';
+  }
+}
+
+function updateSim(s) {
+  updateLed(s);
+  const box = $('#simdata');
+  if (!box) return;
+  $('#simphase').textContent = s.phase >= 0 ? PHASES[s.phase] : 'accelerometro non trovato';
+  if (s.g == null) {
+    box.textContent = 'MPU6050 non trovato: controlla i collegamenti';
+    return;
+  }
+  const zero = s.calAge < 0 ? '⚠ non ancora preso: lascia il sensore fermo 2 s'
+    : `preso ${s.calAge} s fa (a riposo leggeva ${s.calRawG.toFixed(3)} g, ora corretto a 1,000)`;
+  box.innerHTML = [
+    `Accelerazione: |a| <b>${s.g.toFixed(2)} g</b> · netta <b>${s.net.toFixed(2)} g</b> · ` +
+      `x ${s.acc[0].toFixed(2)} y ${s.acc[1].toFixed(2)} z ${s.acc[2].toFixed(2)}`,
+    `Giroscopio: x ${s.gyro[0].toFixed(1)} y ${s.gyro[1].toFixed(1)} z ${s.gyro[2].toFixed(1)} °/s` +
+      ` · picco dall'ultimo decollo ${s.peakG.toFixed(1)} g`,
+    `Zero sulla rampa: ${zero}`,
+    `Cicalino: ${s.buzzer ? '🔔 suona' : 'spento'}`,
+    `Anello: ${!s.led ? '-' : s.led.manual ? `manuale, #${s.led.color} al ${s.led.pct}%`
+      : 'automatico' + (s.testMode ? ' (max 25% in modalità prova)' : '')}`,
+  ].join('<br>');
+}
+
+// ---------- modalità prova: decollo con un colpo della mano ----------
+function testLabel() {
+  return S.status?.testMode ? '🧪 Modalità prova: ON' : '🧪 Modalità prova: OFF';
+}
+
+async function toggleTestMode() {
+  const on = !S.status?.testMode;
+  try {
+    await api('/api/testmode?on=' + (on ? 1 : 0), {method: 'POST'});
+    toast(on ? 'Modalità prova attiva: registrazione avviata, basta un colpo secco della mano'
+             : 'Modalità prova disattivata: soglia di volo normale');
+  } catch (e) {
+    toast('Errore: ' + e.message);
+  }
+  await pollStatus();
 }
 
 function togglePreview() {
@@ -325,7 +478,6 @@ function exportTable() {
 function renderLaunch(l) {
   const m = l.meta;
   const water = m.bottle_l && m.water_pct ? Math.round(m.bottle_l * m.water_pct * 10) + ' ml' : null;
-  const videoFile = l.files.find(f => f.name === 'video.mjpeg');
   $('#app').innerHTML = `
     <div class="row between" style="margin-bottom:8px">
       <a href="#/">← Tutti i lanci</a>
@@ -342,11 +494,7 @@ function renderLaunch(l) {
               <div style="position:relative">
                 <img id="pimg" class="view" src="/thumb?dir=${encodeURIComponent(l.dir)}" alt="">
               </div>
-              <div id="pload" class="row between" style="margin-top:10px">
-                <span class="mut">Il video viene scaricato nel browser per la riproduzione (${fmtSize(videoFile.size)})</span>
-                <button class="pri" onclick="Player.load()">▶ Carica e riproduci</button>
-              </div>
-              <div id="pprog" class="progress hidden"><div></div></div>
+              <div id="pload" class="mut" style="margin-top:10px">Preparazione del video in streaming...</div>
               <div id="pctrl" class="hidden">
                 <div class="ctrl">
                   <button onclick="Player.step(-1)" title="Frame precedente (←)">⏮</button>
@@ -405,6 +553,7 @@ function renderLaunch(l) {
           <h3>Download</h3>
           <div class="dl">
             ${l.hasVideo && !l.recording ? `<a href="/avi?dir=${encodeURIComponent(l.dir)}"><span>🎬 Video con audio (.avi)</span><span class="mut">~${fmtSize(l.size)}</span></a>` : ''}
+            ${!l.recording ? `<a href="/zip?dir=${encodeURIComponent(l.dir)}"><span>🗜 Tutti i file (.zip)</span><span class="mut">${fmtSize(l.files.reduce((s, f) => s + f.size, 0))}</span></a>` : ''}
             <a href="javascript:exportLaunch('json')"><span>📋 Dati del lancio (.json)</span><span class="mut">parametri + statistiche</span></a>
             <a href="javascript:exportLaunch('csv')"><span>📊 Dati del lancio (.csv)</span><span class="mut">parametri + statistiche</span></a>
             ${l.files.map(f => `<a href="${fileUrl(l.dir + '/' + f.name, true)}"><span>${esc(f.name)}</span><span class="mut">${fmtSize(f.size)}</span></a>`).join('')}
@@ -471,70 +620,100 @@ async function deleteLaunch() {
   }
 }
 
-// ---------- player: frame JPEG da video.mjpeg (offset da frames.csv) + audio.wav ----------
+// ---------- player in streaming: frame JPEG da video.mjpeg (offset da frames.csv) + audio.wav ----------
+// Niente download completo: frames.csv (pochi KB) dice dove sta ogni frame nel file, poi i
+// frame si scaricano a blocchi di CHUNK con richieste HTTP Range, precaricando i successivi
+// durante la riproduzione. L'audio lo scarica il browser in streaming (anche lui con Range).
 const Player = {
-  l: null, frames: [], audio: null, dur: 0, idx: -1, url: null,
+  CHUNK: 10,        // frame per richiesta (~200 KB in SVGA)
+  AHEAD: 3,         // blocchi precaricati davanti durante la riproduzione (~1 s)
+  MAX_CACHE: 60,    // blocchi tenuti in memoria (~12 MB), i più vecchi si scartano
+  MAX_INFLIGHT: 2,  // richieste in parallelo verso l'ESP32
+  l: null, frames: [], audio: null, dur: 0, idx: -1, url: null, want: -1, pending: -1,
+  cache: new Map(), inflight: 0, gen: 0,
   playing: false, pos: 0, base: 0, wall: 0, speed: 1, raf: 0,
 
-  attach(l) { this.l = l; },
+  attach(l) {
+    this.l = l;
+    if (l.hasVideo && !l.recording) this.load();
+  },
 
   close() {
     cancelAnimationFrame(this.raf);
-    if (this.audio) { this.audio.pause(); URL.revokeObjectURL(this.audio.src); }
+    if (this.audio) { this.audio.pause(); this.audio.src = ''; }
     if (this.url) URL.revokeObjectURL(this.url);
-    Object.assign(this, {l: null, frames: [], audio: null, url: null, idx: -1, playing: false, pos: 0, speed: 1});
-  },
-
-  async fetchWithProgress(url, total) {
-    const r = await api(url);
-    const reader = r.body.getReader();
-    const chunks = [];
-    let got = 0;
-    for (;;) {
-      const {done, value} = await reader.read();
-      if (done) break;
-      chunks.push(value);
-      got += value.length;
-      $('#pprog div').style.width = Math.min(100, got * 100 / total) + '%';
-    }
-    const buf = new Uint8Array(got);
-    let o = 0;
-    for (const c of chunks) { buf.set(c, o); o += c.length; }
-    return buf.buffer;
+    this.gen++;  // le risposte ancora in viaggio del lancio precedente vengono ignorate
+    Object.assign(this, {l: null, frames: [], audio: null, url: null, idx: -1, want: -1, pending: -1,
+      cache: new Map(), inflight: 0, playing: false, pos: 0, speed: 1});
   },
 
   async load() {
-    const l = this.l;
-    $('#pload').classList.add('hidden');
-    $('#pprog').classList.remove('hidden');
+    const l = this.l, gen = this.gen;
     try {
-      // Una richiesta alla volta: il server dell'ESP32 è single-thread
       const csv = await (await api(fileUrl(l.dir + '/frames.csv'))).text();
+      if (gen !== this.gen) return;
       const vsize = l.files.find(f => f.name === 'video.mjpeg').size;
-      const vid = await this.fetchWithProgress(fileUrl(l.dir + '/video.mjpeg'), vsize);
       let off = 0;
       this.frames = [];
       for (const line of csv.trim().split('\n').slice(1)) {
         const [, t, bytes] = line.split(',').map(Number);
-        if (!bytes || off + bytes > vid.byteLength) break;  // CSV e video possono differire se è saltata la corrente
-        this.frames.push({t, blob: new Blob([vid.slice(off, off + bytes)], {type: 'image/jpeg'})});
+        if (!bytes || off + bytes > vsize) break;  // CSV e video possono differire se è saltata la corrente
+        this.frames.push({t, off, len: bytes});
         off += bytes;
       }
       if (!this.frames.length) throw new Error('nessun frame');
       if (l.files.some(f => f.name === 'audio.wav')) {
-        const wav = await (await api(fileUrl(l.dir + '/audio.wav'))).blob();
-        this.audio = new Audio(URL.createObjectURL(wav));
+        this.audio = new Audio(fileUrl(l.dir + '/audio.wav'));
+        this.audio.preload = 'auto';
       }
       this.dur = this.frames[this.frames.length - 1].t;
-      $('#pprog').classList.add('hidden');
+      $('#pload').classList.add('hidden');
       $('#pctrl').classList.remove('hidden');
       $('#pseek').max = this.dur;
       this.show(0);
-      this.play();
     } catch (e) {
-      $('#pprog').classList.add('hidden');
-      $('#pload').classList.remove('hidden');
-      toast('Errore nel caricamento: ' + e.message);
+      $('#pload').textContent = 'Video non disponibile: ' + e.message;
+    }
+  },
+
+  // Blocco k di frame: una richiesta Range sola per CHUNK frame consecutivi
+  chunk(k) {
+    if (this.cache.has(k)) {
+      const p = this.cache.get(k);
+      this.cache.delete(k);  // in fondo alla Map = usato di recente
+      this.cache.set(k, p);
+      return p;
+    }
+    const first = this.frames[k * this.CHUNK];
+    const last = this.frames[Math.min(this.frames.length, (k + 1) * this.CHUNK) - 1];
+    const gen = this.gen;
+    this.inflight++;
+    const p = fetch(fileUrl(this.l.dir + '/video.mjpeg'),
+                    {headers: {Range: `bytes=${first.off}-${last.off + last.len - 1}`}})
+      .then(r => {
+        if (r.status !== 206) throw new Error('il server non supporta lo streaming (HTTP ' + r.status + ')');
+        return r.arrayBuffer();
+      })
+      .then(buf => ({base: first.off, buf}))
+      .catch(e => { this.cache.delete(k); throw e; })
+      .finally(() => {
+        if (gen !== this.gen) return;
+        this.inflight--;
+        if (this.want >= 0 && this.want !== this.idx) this.show(this.want);  // richiesta rimasta in attesa
+        this.prefetch();
+      });
+    this.cache.set(k, p);
+    while (this.cache.size > this.MAX_CACHE) this.cache.delete(this.cache.keys().next().value);
+    return p;
+  },
+
+  // Durante la riproduzione tiene pronti i blocchi successivi
+  prefetch() {
+    if (!this.playing || this.idx < 0) return;
+    const k0 = Math.floor(this.idx / this.CHUNK);
+    const kMax = Math.floor((this.frames.length - 1) / this.CHUNK);
+    for (let k = k0; k <= Math.min(kMax, k0 + this.AHEAD) && this.inflight < this.MAX_INFLIGHT; k++) {
+      if (!this.cache.has(k)) this.chunk(k);
     }
   },
 
@@ -548,16 +727,33 @@ const Player = {
   },
 
   show(i) {
-    if (i !== this.idx) {
-      this.idx = i;
-      if (this.url) URL.revokeObjectURL(this.url);
-      this.url = URL.createObjectURL(this.frames[i].blob);
-      $('#pimg').src = this.url;
-      $('#pframe').textContent = `frame ${i + 1} / ${this.frames.length}`;
-    }
+    this.want = i;
     $('#ptime').textContent = `${(this.pos / 1000).toFixed(2)} / ${(this.dur / 1000).toFixed(2)} s`;
     $('#pseek').value = this.pos;
     Sensors.cursor(this.pos);
+    if (i === this.idx || i === this.pending) return;  // già mostrato o già in arrivo
+
+    const k = Math.floor(i / this.CHUNK);
+    $('#pframe').textContent = `frame ${i + 1} / ${this.frames.length} ⏳`;
+    // Trascinando veloce non si accodano decine di richieste: se le linee sono occupate
+    // si aspetta, e alla prima risposta si chiede l'ultimo frame voluto (vedi chunk())
+    if (!this.cache.has(k) && this.inflight >= this.MAX_INFLIGHT) return;
+    const gen = this.gen;
+    this.pending = i;
+    this.chunk(k).then(({base, buf}) => {
+      if (gen !== this.gen || this.want !== i) return;  // nel frattempo si è spostato altrove
+      const f = this.frames[i];
+      this.idx = i;
+      if (this.url) URL.revokeObjectURL(this.url);
+      this.url = URL.createObjectURL(new Blob([buf.slice(f.off - base, f.off - base + f.len)], {type: 'image/jpeg'}));
+      $('#pimg').src = this.url;
+      $('#pframe').textContent = `frame ${i + 1} / ${this.frames.length}`;
+      this.prefetch();
+    }).catch(e => {
+      if (gen === this.gen) $('#pframe').textContent = 'errore: ' + e.message;
+    }).finally(() => {
+      if (this.pending === i) this.pending = -1;
+    });
   },
 
   // Orologio: a velocità 1× segue l'audio (sincronia perfetta), altrimenti il tempo reale scalato
@@ -618,7 +814,7 @@ const Player = {
   step(d) {
     if (!this.frames.length) return;
     this.pause();
-    const i = Math.max(0, Math.min(this.frames.length - 1, this.idx + d));
+    const i = Math.max(0, Math.min(this.frames.length - 1, (this.want >= 0 ? this.want : this.idx) + d));
     this.pos = this.frames[i].t;
     this.show(i);
   },
@@ -662,17 +858,47 @@ const Sensors = {
           <span class="mut tnum">min ${Math.min(...valid).toFixed(2)} · max ${Math.max(...valid).toFixed(2)}</span></div><canvas></canvas>`;
         box.appendChild(div);
         const canvas = $('canvas', div);
-        canvas.onclick = e => {
-          const s = this.series.find(x => x.canvas === canvas);
-          const t = s.x0 + (e.offsetX - s.padL) / s.w * (s.x1 - s.x0);
-          Player.frames.length ? Player.seek(t) : this.cursor(t);
-        };
+        this.bindScrub(canvas);
         this.series.push({canvas, ys, name: head[c]});
       }
       this.drawAll();
     } catch (e) {
       $('#sensors').textContent = 'Impossibile leggere sensors.csv: ' + e.message;
     }
+  },
+
+  // Clic o trascinamento (mouse e dito) sul grafico: video e cursore seguono il puntatore.
+  // Gli spostamenti si raggruppano a uno per fotogramma dello schermo, e durante il
+  // trascinamento la riproduzione resta in pausa (riparte al rilascio).
+  bindScrub(canvas) {
+    let dragging = false, resume = false, pending = null;
+    const timeAt = e => {
+      const s = this.series.find(x => x.canvas === canvas);
+      const x = Math.max(s.padL, Math.min(s.padL + s.w, e.offsetX));
+      return s.x0 + (x - s.padL) / s.w * (s.x1 - s.x0);
+    };
+    const go = e => {
+      const first = pending == null;
+      pending = timeAt(e);
+      if (!first) return;
+      requestAnimationFrame(() => {
+        Player.frames.length ? Player.seek(pending) : this.cursor(pending);
+        pending = null;
+      });
+    };
+    canvas.onpointerdown = e => {
+      dragging = true;
+      canvas.setPointerCapture(e.pointerId);
+      resume = Player.playing;
+      if (resume) Player.pause();
+      go(e);
+    };
+    canvas.onpointermove = e => { if (dragging) go(e); };
+    canvas.onpointerup = canvas.onpointercancel = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (resume) Player.play();
+    };
   },
 
   cursor(t) {

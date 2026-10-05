@@ -1,87 +1,172 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" width="960" height="560" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Segoe UI, Helvetica, Arial, sans-serif">
   <title>Schema generale: XIAO, LiPo, BMP280, MPU6050, cicalino e anello LED</title>
-  <rect x="1" y="1" width="958" height="558" rx="12" fill="#ffffff" stroke="#d0d7de"/>
-  <text x="480" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1f2328">Elettronica di volo — schema generale</text>
-  <text x="480" y="56" text-anchor="middle" font-size="13" fill="#57606a">tutto quello che va cablato a mano · camera, microfono e microSD sono già sulla shield Sense</text>
+  <rect x="1" y="1" width="998" height="678" rx="12" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="500" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1f2328">Elettronica di volo — schema generale</text>
+  <text x="500" y="56" text-anchor="middle" font-size="13" fill="#57606a">XIAO vista dall'alto, USB-C in alto, pad nella posizione reale · punto = collegamento · ponticello = nessun contatto</text>
+
+  <!-- LiPo in alto al centro -->
+  <rect x="390" y="76" width="180" height="52" rx="10" fill="#c0c8d0" stroke="#6e7781" stroke-width="2"/>
+  <text x="480" y="98" text-anchor="middle" font-size="13" font-weight="700" fill="#24292f">LiPo 1S 400 mAh</text>
+  <text x="480" y="116" text-anchor="middle" font-size="11" fill="#24292f">JST 1.25 → pad BAT− / BAT+</text>
+  <text x="447" y="143" font-size="13" font-weight="700" fill="#24292f">−</text>
+  <text x="527" y="143" font-size="13" font-weight="700" fill="#d62828">+</text>
 
   <!-- XIAO al centro -->
-  <rect x="390" y="150" width="180" height="250" rx="14" fill="#1f2a37" stroke="#0d1117" stroke-width="2"/>
-  <rect x="430" y="128" width="100" height="30" rx="8" fill="#a8b1bb" stroke="#6e7781"/>
-  <text x="480" y="148" text-anchor="middle" font-size="12" font-weight="600" fill="#24292f">USB-C</text>
-  <text x="480" y="270" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">XIAO</text>
-  <text x="480" y="290" text-anchor="middle" font-size="12" fill="#c9d1d9">ESP32-S3 Sense</text>
-  <text x="480" y="224" text-anchor="middle" font-size="11" fill="#8b949e">camera · mic · microSD</text>
-  <!-- pin usati -->
+  <rect x="380" y="200" width="200" height="280" rx="14" fill="#1f2a37" stroke="#0d1117" stroke-width="2"/>
+  <rect x="455" y="180" width="50" height="28" rx="7" fill="#a8b1bb" stroke="#6e7781"/>
+  <text x="480" y="198" text-anchor="middle" font-size="10" font-weight="600" fill="#24292f">USB-C</text>
+  <text x="480" y="365" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">XIAO</text>
+  <text x="480" y="383" text-anchor="middle" font-size="12" fill="#c9d1d9">ESP32-S3 Sense</text>
+  <text x="480" y="403" text-anchor="middle" font-size="10.5" fill="#8b949e">camera · mic · microSD</text>
+
+  <!-- pad sul retro: BAT− vicino alla USB-C -->
+  <text x="480" y="226" text-anchor="middle" font-size="9.5" fill="#8b949e">pad sul retro</text>
+  <g fill="#3a4757" stroke="#d4a017" stroke-width="1.5" stroke-dasharray="3 2">
+    <rect x="455" y="232" width="50" height="18" rx="3"/>
+    <rect x="455" y="260" width="50" height="18" rx="3"/>
+  </g>
+  <g font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">
+    <text x="480" y="245">BAT−</text><text x="480" y="273">BAT+</text>
+  </g>
+
+  <!-- pad laterali: sinistra D0..D6, destra 5V GND 3V3 D10 D9 D8 D7 -->
+  <g fill="#57606a" stroke="#30363d" stroke-width="1.5">
+    <circle cx="380" cy="230" r="7"/><circle cx="380" cy="300" r="7"/><circle cx="380" cy="440" r="7"/>
+    <circle cx="580" cy="230" r="7"/><circle cx="580" cy="335" r="7"/><circle cx="580" cy="370" r="7"/>
+    <circle cx="580" cy="405" r="7"/><circle cx="580" cy="440" r="7"/>
+  </g>
   <g fill="#d4a017" stroke="#8a6a0a" stroke-width="1.5">
-    <circle cx="390" cy="200" r="7"/><circle cx="390" cy="240" r="7"/><circle cx="390" cy="320" r="7"/><circle cx="390" cy="360" r="7"/>
-    <circle cx="570" cy="200" r="7"/><circle cx="570" cy="240" r="7"/><circle cx="570" cy="300" r="7"/>
+    <circle cx="380" cy="265" r="7"/><circle cx="380" cy="335" r="7"/><circle cx="380" cy="370" r="7"/><circle cx="380" cy="405" r="7"/>
+    <circle cx="580" cy="265" r="7"/><circle cx="580" cy="300" r="7"/>
   </g>
-  <g font-size="11.5" fill="#ffffff" font-weight="600">
-    <text x="402" y="204">3V3</text><text x="402" y="244">GND</text><text x="402" y="324">D4 SDA</text><text x="402" y="364">D5 SCL</text>
-    <text x="558" y="204" text-anchor="end">BAT+</text><text x="558" y="244" text-anchor="end">GND</text><text x="558" y="304" text-anchor="end">D3</text>
+  <g font-size="11.5">
+    <text x="393" y="234" fill="#8b949e">D0</text>
+    <text x="393" y="269" fill="#ffffff" font-weight="700">D1</text>
+    <text x="393" y="304" fill="#8b949e">D2</text>
+    <text x="393" y="339" fill="#ffffff" font-weight="700">D3</text>
+    <text x="393" y="374" fill="#ffffff" font-weight="700">D4</text>
+    <text x="393" y="409" fill="#ffffff" font-weight="700">D5</text>
+    <text x="393" y="444" fill="#8b949e">D6</text>
   </g>
-  <circle cx="480" cy="400" r="7" fill="#d4a017" stroke="#8a6a0a" stroke-width="1.5"/>
-  <text x="480" y="390" text-anchor="middle" font-size="11.5" fill="#ffffff" font-weight="600">D1</text>
+  <g font-size="11.5" text-anchor="end">
+    <text x="567" y="234" fill="#8b949e">5V</text>
+    <text x="567" y="269" fill="#ffffff" font-weight="700">GND</text>
+    <text x="567" y="304" fill="#ffffff" font-weight="700">3V3</text>
+    <text x="567" y="339" fill="#8b949e">D10</text>
+    <text x="567" y="374" fill="#8b949e">D9</text>
+    <text x="567" y="409" fill="#8b949e">D8</text>
+    <text x="567" y="444" fill="#8b949e">D7</text>
+  </g>
 
-  <!-- LiPo in alto a destra -->
-  <rect x="690" y="80" width="230" height="70" rx="10" fill="#c0c8d0" stroke="#6e7781" stroke-width="2"/>
-  <text x="805" y="110" text-anchor="middle" font-size="14" font-weight="700" fill="#24292f">LiPo 1S 400 mAh</text>
-  <text x="805" y="130" text-anchor="middle" font-size="12" fill="#24292f">JST 1.25 → pad BAT+/BAT−</text>
-  <path d="M570 200 L 640 200 L 640 115 L 690 115" fill="none" stroke="#d62828" stroke-width="4.5" stroke-linejoin="round"/>
-  <path d="M570 240 L 660 240 L 660 135 L 690 135" fill="none" stroke="#24292f" stroke-width="4.5" stroke-linejoin="round"/>
+  <!-- batteria: tratteggiato = filo sotto la scheda -->
+  <path d="M455 241 L 440 241 L 440 200" fill="none" stroke="#aab4bf" stroke-width="4" stroke-dasharray="6 4"/>
+  <path d="M505 269 L 520 269 L 520 200" fill="none" stroke="#d62828" stroke-width="4" stroke-dasharray="6 4"/>
+  <path d="M440 200 L 440 128" fill="none" stroke="#24292f" stroke-width="4.5"/>
+  <path d="M520 200 L 520 128" fill="none" stroke="#d62828" stroke-width="4.5"/>
 
-  <!-- anello LED a destra -->
-  <circle cx="805" cy="330" r="70" fill="#1f2a37"/>
-  <circle cx="805" cy="330" r="40" fill="#ffffff"/>
-  <g stroke="#57606a" stroke-width="1"><rect x="795" y="266" width="20" height="20" rx="3" fill="#ff5a5a"/><rect x="835" y="282" width="20" height="20" rx="3" fill="#ffb347"/><rect x="851" y="320" width="20" height="20" rx="3" fill="#ffe156"/><rect x="835" y="358" width="20" height="20" rx="3" fill="#6ee07a"/><rect x="795" y="374" width="20" height="20" rx="3" fill="#5ad1ff"/><rect x="755" y="358" width="20" height="20" rx="3" fill="#5a8bff"/><rect x="739" y="320" width="20" height="20" rx="3" fill="#b07aff"/><rect x="755" y="282" width="20" height="20" rx="3" fill="#ffffff"/></g>
-  <text x="805" y="327" text-anchor="middle" font-size="11" font-weight="700" fill="#1f2328">WS2812B</text>
-  <text x="805" y="342" text-anchor="middle" font-size="10.5" fill="#57606a">8 LED</text>
-  <path d="M640 200 L 640 250 L 700 250 L 700 300 L 735 300" fill="none" stroke="#d62828" stroke-width="3.5" stroke-linejoin="round"/>
-  <circle cx="640" cy="200" r="5" fill="#1f2328"/>
-  <path d="M660 240 L 680 240 L 680 330 L 735 330" fill="none" stroke="#24292f" stroke-width="3.5" stroke-linejoin="round"/>
-  <circle cx="660" cy="240" r="5" fill="#1f2328"/>
-  <path d="M570 300 L 610 300 L 610 360 L 735 360" fill="none" stroke="#2a9d3f" stroke-width="3.5" stroke-linejoin="round"/>
-  <rect x="622" y="350" width="44" height="20" rx="3" fill="#ffffff" stroke="#1f2328" stroke-width="2"/>
-  <text x="644" y="364" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1f2328">330 Ω</text>
-  <text x="712" y="295" font-size="10.5" fill="#d62828" font-weight="600">VDD</text>
-  <text x="712" y="325" font-size="10.5" fill="#24292f" font-weight="600">GND</text>
-  <text x="712" y="355" font-size="10.5" fill="#2a9d3f" font-weight="600">DIN</text>
+  <!-- GND verso cicalino e anello (dal BAT−, stesso nodo del pad GND) -->
+  <path d="M440 165 L 80 165 L 80 345 L 121 345" fill="none" stroke="#24292f" stroke-width="3.5" stroke-linejoin="round"/>
+  <!-- BAT+ verso l'anello, scavalca il BAT− -->
+  <path d="M121 395 L 50 395 L 50 150 L 434 150 A 6 6 0 0 1 446 150 L 520 150" fill="none" stroke="#d62828" stroke-width="3.5" stroke-linejoin="round"/>
+  <text x="250" y="144" font-size="10.5" font-weight="600" fill="#d62828">BAT+</text>
+  <text x="250" y="180" font-size="10.5" font-weight="600" fill="#24292f">GND (BAT−)</text>
 
-  <!-- sensori a sinistra -->
-  <rect x="40" y="150" width="200" height="74" rx="8" fill="#6f42c1" stroke="#4c2889" stroke-width="2"/>
-  <text x="140" y="182" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">BMP280</text>
-  <text x="140" y="202" text-anchor="middle" font-size="11.5" fill="#e2d6f7">altimetro · 0x76</text>
-  <rect x="40" y="290" width="200" height="74" rx="8" fill="#1d4e89" stroke="#0f2f57" stroke-width="2"/>
-  <text x="140" y="322" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">MPU6050 GY-521</text>
-  <text x="140" y="342" text-anchor="middle" font-size="11.5" fill="#c8dcf5">accel + giro · 0x68</text>
-  <!-- 3V3 e GND ai due sensori -->
-  <path d="M390 200 L 300 200 L 300 165 L 240 165 M300 200 L 300 305 L 240 305" fill="none" stroke="#f77f00" stroke-width="3.5" stroke-linejoin="round"/>
-  <path d="M390 240 L 320 240 L 320 180 L 240 180 M320 240 L 320 320 L 240 320" fill="none" stroke="#24292f" stroke-width="3.5" stroke-linejoin="round"/>
-  <path d="M390 320 L 340 320 L 340 195 L 240 195 M340 320 L 340 335 L 240 335" fill="none" stroke="#1d6fd8" stroke-width="3.5" stroke-linejoin="round"/>
-  <path d="M390 360 L 360 360 L 360 210 L 240 210 M360 360 L 360 350 L 240 350" fill="none" stroke="#e0b000" stroke-width="3.5" stroke-linejoin="round"/>
-  <g fill="#1f2328"><circle cx="300" cy="200" r="4.5"/><circle cx="320" cy="240" r="4.5"/><circle cx="340" cy="320" r="4.5"/><circle cx="360" cy="360" r="4.5"/></g>
+  <!-- cicalino a sinistra, su D1 -->
+  <path d="M80 265 L 176 265" stroke="#24292f" stroke-width="3.5"/>
+  <path d="M224 265 L 380 265" stroke="#24292f" stroke-width="6"/>
+  <path d="M224 265 L 380 265" stroke="#ffffff" stroke-width="3"/>
+  <circle cx="200" cy="265" r="24" fill="#24292f"/>
+  <circle cx="200" cy="265" r="6" fill="#57606a"/>
+  <text x="200" y="232" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1f2328">Cicalino 12095</text>
+  <text x="166" y="257" text-anchor="end" font-size="12" font-weight="700" fill="#1f2328">−</text>
+  <text x="232" y="257" font-size="12" font-weight="700" fill="#1f2328">+</text>
 
-  <!-- cicalino in basso -->
-  <circle cx="480" cy="485" r="38" fill="#24292f"/>
-  <circle cx="480" cy="485" r="8" fill="#57606a"/>
-  <text x="430" y="480" text-anchor="end" font-size="13" font-weight="700" fill="#1f2328">Cicalino 12095</text>
-  <text x="430" y="498" text-anchor="end" font-size="11.5" fill="#57606a">+ su D1, − su GND</text>
-  <path d="M480 407 L 480 447" stroke="#24292f" stroke-width="6"/>
-  <path d="M480 407 L 480 447" stroke="#ffffff" stroke-width="3"/>
-  <path d="M600 240 L 600 485 L 518 485" fill="none" stroke="#24292f" stroke-width="3.5" stroke-linejoin="round"/>
-  <circle cx="600" cy="240" r="4.5" fill="#1f2328"/>
-  <text x="530" y="478" font-size="11" font-weight="700" fill="#1f2328">−</text>
-  <text x="488" y="440" font-size="11" font-weight="700" fill="#1f2328">+</text>
+  <!-- anello LED a sinistra, su D3 -->
+  <path d="M380 335 L 300 335 L 300 370 L 225 370" fill="none" stroke="#2a9d3f" stroke-width="3.5" stroke-linejoin="round"/>
+  <rect x="240" y="360" width="44" height="20" rx="3" fill="#ffffff" stroke="#1f2328" stroke-width="2"/>
+  <text x="262" y="374" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1f2328">330 Ω</text>
+  <circle cx="170" cy="370" r="55" fill="#1f2a37"/>
+  <circle cx="170" cy="370" r="29" fill="#ffffff"/>
+  <g stroke="#57606a" stroke-width="1">
+    <rect x="163" y="322" width="14" height="14" rx="3" fill="#ff5a5a"/>
+    <rect x="192" y="334" width="14" height="14" rx="3" fill="#ffb347"/>
+    <rect x="204" y="363" width="14" height="14" rx="3" fill="#ffe156"/>
+    <rect x="192" y="392" width="14" height="14" rx="3" fill="#6ee07a"/>
+    <rect x="163" y="404" width="14" height="14" rx="3" fill="#5ad1ff"/>
+    <rect x="134" y="392" width="14" height="14" rx="3" fill="#5a8bff"/>
+    <rect x="122" y="363" width="14" height="14" rx="3" fill="#b07aff"/>
+    <rect x="134" y="334" width="14" height="14" rx="3" fill="#ffffff"/>
+  </g>
+  <text x="170" y="368" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1f2328">WS2812B</text>
+  <text x="170" y="380" text-anchor="middle" font-size="9.5" fill="#57606a">8 LED</text>
+  <g font-size="10" font-weight="600">
+    <text x="90" y="339" fill="#24292f">GND</text>
+    <text x="90" y="389" fill="#d62828">VDD</text>
+    <text x="228" y="358" fill="#2a9d3f">DIN</text>
+  </g>
+  <text x="170" y="445" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1f2328">Anello LED</text>
+
+  <!-- alimentazione sensori dal lato destro -->
+  <path d="M580 265 L 880 265 L 880 340" fill="none" stroke="#24292f" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M580 300 L 850 300 L 850 340" fill="none" stroke="#f77f00" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M670 300 L 670 340" stroke="#f77f00" stroke-width="3.5"/>
+  <path d="M700 265 L 700 294 A 6 6 0 0 1 700 306 L 700 340" fill="none" stroke="#24292f" stroke-width="3.5"/>
+  <text x="600" y="258" font-size="10.5" font-weight="600" fill="#24292f">GND</text>
+  <text x="600" y="293" font-size="10.5" font-weight="600" fill="#c25e00">3V3</text>
+
+  <!-- I2C: da D4/D5 a sinistra, sotto la scheda, ai sensori -->
+  <path d="M380 370 L 345 370 L 345 560 L 880 560 L 880 460" fill="none" stroke="#1d6fd8" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M380 405 L 360 405 L 360 540 L 850 540 L 850 460" fill="none" stroke="#e0b000" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M670 540 L 670 460" stroke="#e0b000" stroke-width="3.5"/>
+  <path d="M700 560 L 700 546 A 6 6 0 0 1 700 534 L 700 460" fill="none" stroke="#1d6fd8" stroke-width="3.5"/>
+  <text x="480" y="533" text-anchor="middle" font-size="10.5" font-weight="600" fill="#9a7800">SCL · D5</text>
+  <text x="480" y="577" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1d6fd8">SDA · D4</text>
+
+  <!-- sensori -->
+  <rect x="640" y="340" width="150" height="120" rx="8" fill="#6f42c1" stroke="#4c2889" stroke-width="2"/>
+  <rect x="820" y="340" width="150" height="120" rx="8" fill="#1d4e89" stroke="#0f2f57" stroke-width="2"/>
+  <g font-size="10" font-weight="600" text-anchor="middle" fill="#ffffff">
+    <text x="670" y="356">VCC</text><text x="700" y="356">GND</text>
+    <text x="670" y="452">SCL</text><text x="700" y="452">SDA</text>
+    <text x="850" y="356">VCC</text><text x="880" y="356">GND</text>
+    <text x="850" y="452">SCL</text><text x="880" y="452">SDA</text>
+  </g>
+  <text x="715" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">BMP280</text>
+  <text x="715" y="409" text-anchor="middle" font-size="11" fill="#e2d6f7">altimetro · 0x76</text>
+  <text x="715" y="425" text-anchor="middle" font-size="9.5" fill="#e2d6f7">CSB→3V3 · SDO→GND</text>
+  <text x="895" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">MPU6050</text>
+  <text x="895" y="409" text-anchor="middle" font-size="11" fill="#c8dcf5">GY-521 · 0x68</text>
+  <text x="895" y="425" text-anchor="middle" font-size="9.5" fill="#c8dcf5">AD0→GND</text>
+
+  <!-- giunzioni -->
+  <g fill="#1f2328">
+    <circle cx="440" cy="165" r="5"/><circle cx="520" cy="150" r="5"/><circle cx="80" cy="265" r="5"/>
+    <circle cx="670" cy="300" r="5"/><circle cx="700" cy="265" r="5"/>
+    <circle cx="670" cy="540" r="5"/><circle cx="700" cy="560" r="5"/>
+  </g>
+
+  <!-- pad non usati -->
+  <rect x="640" y="84" width="330" height="140" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="656" y="106" font-size="12.5" font-weight="700" fill="#1f2328">Pad non cablati (in grigio)</text>
+  <g font-size="11.5" fill="#57606a">
+    <text x="656" y="128">D0 · libero (partitore batteria, opzionale)</text>
+    <text x="656" y="147">D2 · non usare (strapping)</text>
+    <text x="656" y="166">D6 / D7 · liberi (UART, GPS in futuro)</text>
+    <text x="656" y="185">D8 / D9 / D10 · occupati dalla microSD</text>
+    <text x="656" y="204">5V · non alimentato quando si va a batteria</text>
+  </g>
 
   <!-- legenda -->
   <g font-size="11.5" fill="#1f2328">
-    <line x1="40" y1="440" x2="66" y2="440" stroke="#d62828" stroke-width="4"/><text x="72" y="444">BAT+</text>
-    <line x1="120" y1="440" x2="146" y2="440" stroke="#f77f00" stroke-width="4"/><text x="152" y="444">3V3</text>
-    <line x1="196" y1="440" x2="222" y2="440" stroke="#24292f" stroke-width="4"/><text x="228" y="444">GND</text>
-    <line x1="40" y1="466" x2="66" y2="466" stroke="#1d6fd8" stroke-width="4"/><text x="72" y="470">SDA</text>
-    <line x1="120" y1="466" x2="146" y2="466" stroke="#e0b000" stroke-width="4"/><text x="152" y="470">SCL</text>
-    <line x1="196" y1="466" x2="222" y2="466" stroke="#2a9d3f" stroke-width="4"/><text x="228" y="470">dati LED</text>
-    <line x1="40" y1="492" x2="66" y2="492" stroke="#24292f" stroke-width="6"/><line x1="40" y1="492" x2="66" y2="492" stroke="#ffffff" stroke-width="3"/><text x="72" y="496">cicalino</text>
-    <circle cx="200" cy="492" r="4.5" fill="#1f2328"/><text x="210" y="496">giunzione</text>
+    <line x1="40" y1="618" x2="66" y2="618" stroke="#d62828" stroke-width="4"/><text x="72" y="622">BAT+</text>
+    <line x1="130" y1="618" x2="156" y2="618" stroke="#24292f" stroke-width="4"/><text x="162" y="622">GND / BAT−</text>
+    <line x1="260" y1="618" x2="286" y2="618" stroke="#f77f00" stroke-width="4"/><text x="292" y="622">3V3</text>
+    <line x1="340" y1="618" x2="366" y2="618" stroke="#1d6fd8" stroke-width="4"/><text x="372" y="622">SDA</text>
+    <line x1="420" y1="618" x2="446" y2="618" stroke="#e0b000" stroke-width="4"/><text x="452" y="622">SCL</text>
+    <line x1="500" y1="618" x2="526" y2="618" stroke="#2a9d3f" stroke-width="4"/><text x="532" y="622">dati LED</text>
+    <line x1="610" y1="618" x2="636" y2="618" stroke="#24292f" stroke-width="6"/><line x1="610" y1="618" x2="636" y2="618" stroke="#ffffff" stroke-width="3"/><text x="642" y="622">cicalino</text>
+    <circle cx="40" cy="648" r="4.5" fill="#1f2328"/><text x="50" y="652">giunzione</text>
+    <path d="M130 648 L 137 648 A 6 6 0 0 1 149 648 L 156 648" fill="none" stroke="#24292f" stroke-width="3"/><text x="162" y="652">scavalca, nessun contatto</text>
+    <line x1="340" y1="648" x2="366" y2="648" stroke="#24292f" stroke-width="4" stroke-dasharray="6 4"/><text x="372" y="652">filo sotto la scheda (pad sul retro)</text>
   </g>
 </svg>

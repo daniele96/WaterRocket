@@ -11,6 +11,7 @@ struct RecorderHooks {
   void (*stop)();
   bool (*isRecording)();
   String (*sessionDir)();
+  void (*silence)();  // spegne il cicalino e riarma il riconoscimento del volo
 };
 
 // Avvia l'access point WiFi (ed eventualmente la connessione alla rete di

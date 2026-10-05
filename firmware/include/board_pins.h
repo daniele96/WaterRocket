@@ -32,3 +32,14 @@
 
 // --- Pulsante BOOT (attivo basso), utilizzabile come input dopo l'avvio ---
 #define BTN_PIN_BOOT   0
+
+// --- Bus I2C dei sensori (D4 = SDA, D5 = SCL), vedi cablaggio.md §5 ---
+#define I2C_PIN_SDA    5
+#define I2C_PIN_SCL    6
+
+// --- Cicalino attivo 3 V su D1, collegato direttamente al GPIO ---
+#define BUZZER_PIN     2
+
+// --- Anello WS2812B (8 LED): DIN su D3, tramite 330 Ω (vedi cablaggio.md §7) ---
+#define LED_RING_PIN   4
+#define LED_RING_COUNT 8

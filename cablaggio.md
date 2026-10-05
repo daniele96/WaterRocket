@@ -25,6 +25,9 @@ qui c'è il **come**: pin, fili, ordine di montaggio e collaudo.
 
 ![Schema generale del cablaggio](docs/img/schema-generale.svg)
 
+I pad della XIAO sono disegnati **nella posizione reale** (vista dall'alto, USB-C in
+alto): a sinistra D0–D6, a destra 5V, GND, 3V3, D10–D7. BAT+/BAT− sono sul retro.
+
 Riepilogo dei collegamenti:
 
 | Da (XIAO) | A | Note |
@@ -222,6 +225,22 @@ L'anello ha 4 pad (le sigle cambiano tra produttori):
 | Uscita dati | `DO` / `DOUT` / `OUT` | **non collegato** (serve solo a concatenare altri LED) |
 
 ![Collegamento dell'anello LED WS2812B](docs/img/anello-led.svg)
+
+### Prove sul banco senza batteria: dal pad 5V
+
+Finché la LiPo non c'è, l'anello si può alimentare dal pad **5V** (VUSB) con la XIAO
+collegata all'USB. La corrente dei LED non passa dai GPIO né dal regolatore del 3V3.
+
+- **Luminosità bassa**: la porta USB del PC dà ~500 mA e la XIAO ne usa già 250–500.
+  In modalità prova il firmware limita l'anello al 25%.
+- A 5 V la soglia del segnale dati sale a 3,5 V, sopra i 3,3 V della XIAO: spesso
+  funziona lo stesso, ma se il primo LED sfarfalla metti un diodo (1N4148/1N5819) in
+  serie sul 5V, che porta l'alimentazione a ~4,3 V.
+- Il segnale va sul pad **DI** dell'anello (non DO: si leggono facilmente "D1"/"D0").
+
+> ⚠️ **Quando arriva la batteria**, sposta VDD dell'anello su BAT+ e **togli il filo del
+> 5V**. Con anello collegato a 5V e BAT+ insieme, l'USB finisce direttamente sulla LiPo
+> scavalcando il caricatore: rischio di sovraccarica, rigonfiamento o incendio.
 
 ### Perché da BAT+ e non dal 3V3
 
