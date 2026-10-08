@@ -202,7 +202,8 @@ async function pollStatus() {
   $('#recdot').className = 'dot' + (s.recording ? ' on' : '');
   // Fase del volo dall'accelerometro: 0 a terra, 1 in volo, 2 atterrato
   const phase = s.phase === 1 ? ' · 🚀 IN VOLO'
-    : s.phase === 2 ? ` · 🎯 ATTERRATO (picco ${s.peakG.toFixed(1)} g)` : '';
+    : s.phase === 2 ? ` · 🎯 ATTERRATO (picco ${s.peakG.toFixed(1)} g` +
+      (s.baro ? `, quota max ${s.baro.apogee.toFixed(1)} m)` : ')') : '';
   $('#recinfo').textContent = (s.testMode ? '🧪 PROVA · ' : '') + (s.recording
     ? `REC ${s.secs.toFixed(1)} s · ${s.frames} frame · ${s.fps.toFixed(1)} fps`
     : s.sd ? 'Pronto' : 'SD non montata') + phase;
@@ -426,6 +427,9 @@ function updateSim(s) {
     `Giroscopio: x ${s.gyro[0].toFixed(1)} y ${s.gyro[1].toFixed(1)} z ${s.gyro[2].toFixed(1)} °/s` +
       ` · picco dall'ultimo decollo ${s.peakG.toFixed(1)} g`,
     `Zero sulla rampa: ${zero}`,
+    s.baro ? `Altimetro ${s.baro.model}: quota <b>${s.baro.alt.toFixed(2)} m</b> · ${s.baro.press.toFixed(2)} hPa · ` +
+      `${s.baro.temp.toFixed(1)} °C · quota massima dall'ultimo decollo ${s.baro.apogee.toFixed(1)} m`
+      : 'Altimetro: non collegato',
     `Cicalino: ${s.buzzer ? '🔔 suona' : 'spento'}`,
     `Anello: ${!s.led ? '-' : s.led.manual ? `manuale, #${s.led.color} al ${s.led.pct}%`
       : 'automatico' + (s.testMode ? ' (max 25% in modalità prova)' : '')}`,

@@ -1,7 +1,7 @@
 # Cablaggio dell'elettronica di volo 🔌
 
 Guida pratica per collegare alla **XIAO ESP32-S3 Sense** la batteria, i sensori I2C
-(BMP280 + MPU6050), il cicalino di ritrovamento e l'anello LED WS2812B.
+(BMP180 + MPU6050), il cicalino di ritrovamento e l'anello LED WS2812B.
 
 Le scelte dei componenti e il perché sono in [WaterRocket.md §13–15](WaterRocket.md#13-elettronica-di-bordo-);
 qui c'è il **come**: pin, fili, ordine di montaggio e collaudo.
@@ -12,7 +12,7 @@ qui c'è il **come**: pin, fili, ordine di montaggio e collaudo.
 2. [Componenti e attrezzi](#2-componenti-e-attrezzi)
 3. [Pinout della XIAO](#3-pinout-della-xiao)
 4. [Alimentazione e batteria](#4-alimentazione-e-batteria)
-5. [Bus I2C: BMP280 + MPU6050](#5-bus-i2c-bmp280--mpu6050)
+5. [Bus I2C: BMP180 + MPU6050](#5-bus-i2c-bmp180--mpu6050)
 6. [Cicalino di ritrovamento](#6-cicalino-di-ritrovamento)
 7. [Anello LED WS2812B (8 LED)](#7-anello-led-ws2812b-8-led)
 8. [Montaggio passo-passo](#8-montaggio-passo-passo)
@@ -32,10 +32,10 @@ Riepilogo dei collegamenti:
 
 | Da (XIAO) | A | Note |
 |---|---|---|
-| **3V3** | VCC di BMP280 e MPU6050 | Mai la tensione di batteria sui sensori |
+| **3V3** | VIN del BMP180, VCC dell'MPU6050 | Mai la tensione di batteria sui sensori |
 | **GND** | GND di tutti i moduli | Massa comune, unica |
-| **D4 / GPIO5** | SDA di BMP280 e MPU6050 | Bus I2C condiviso |
-| **D5 / GPIO6** | SCL di BMP280 e MPU6050 | Bus I2C condiviso |
+| **D4 / GPIO5** | SDA di BMP180 e MPU6050 | Bus I2C condiviso |
+| **D5 / GPIO6** | SCL di BMP180 e MPU6050 | Bus I2C condiviso |
 | **D1 / GPIO2** | + del cicalino (− a GND) | Diretto, ~25–30 mA |
 | **D3 / GPIO4** | DIN dell'anello, tramite **330 Ω** | Segnale dati WS2812B |
 | **BAT+** | VDD / 5V dell'anello | L'anello prende corrente dalla LiPo, non dal 3V3 |
@@ -50,7 +50,7 @@ Riepilogo dei collegamenti:
 | XIAO ESP32-S3 Sense (con camera e microSD) | 1 | §14 riga 1 |
 | LiPo 1S 400 mAh 602040, JST 1.25, con PCM | 1 | §14 riga 2 |
 | Pigtail JST 1.25 (controparte del connettore della cella) | 1 | §14 riga 6 |
-| BMP280 breakout | 1 | in possesso |
+| BMP180, modulo GY-68 (va bene anche un BMP280) | 1 | BMP280 in possesso |
 | MPU6050 / GY-521 | 1 | §14 riga 3 |
 | Cicalino attivo 12095, 3 V | 1 | §14 riga 4 |
 | Anello WS2812B 8 LED | 1 | — |
@@ -124,7 +124,7 @@ Con la batteria collegata e la USB-C inserita la XIAO **ricarica la LiPo** (50 m
 | Utenza | Alimentata da | Corrente tipica | Picco |
 |---|---|---|---|
 | XIAO + camera + WiFi + SD | LiPo → regolatore interno | ~150–250 mA | ~500 mA |
-| BMP280 + MPU6050 | 3V3 | ~4 mA | ~4 mA |
+| BMP180 + MPU6050 | 3V3 | ~4 mA | ~4 mA |
 | Cicalino (200 ms on / 800 off) | GPIO D1 | ~5 mA medi | ~30 mA |
 | Anello WS2812B 8 LED | **BAT+** diretto | 5–100 mA (dipende dal firmware) | **~480 mA** (tutto bianco al 100 %) |
 
@@ -133,22 +133,29 @@ Con la luminosità limitata via firmware (§7) la batteria da 400 mAh dura comun
 
 ---
 
-## 5. Bus I2C: BMP280 + MPU6050
+## 5. Bus I2C: BMP180 + MPU6050
 
 I due sensori stanno sugli **stessi due fili** (SDA e SCL), con indirizzi diversi.
 
-### BMP280 (altimetro)
+### BMP180 (altimetro)
 
-I breakout BMP280 hanno 6 pin: `VCC GND SCL SDA CSB SDO`.
+Il modulo GY-68 ha 4 pin: `VIN GND SCL SDA`. Ha un regolatore da 3,3 V a bordo (la
+sigla "662K") e l'indirizzo è fisso: **nessun ponticello** da fare.
 
-| Pin BMP280 | Collegare a | Perché |
+| Pin BMP180 | Collegare a | Perché |
 |---|---|---|
-| VCC | **3V3** della XIAO | Molti breakout BMP280 non hanno regolatore: **mai 5 V o BAT+** |
+| VIN | **3V3** della XIAO | Attraverso il regolatore del modulo al chip arrivano ~3,1 V, dentro specifica (1,8–3,6 V) |
 | GND | GND | |
 | SCL | D5 (GPIO6) | |
 | SDA | D4 (GPIO5) | |
-| CSB | **3V3** | A livello alto seleziona la modalità I2C (se lasciato flottante alcuni moduli partono in SPI) |
-| SDO | **GND** | Indirizzo **0x76** (a 3V3 diventa 0x77) |
+
+Indirizzo **0x77**, non modificabile: nessun conflitto con l'MPU6050 (0x68).
+
+> **Va bene anche un BMP280** (i 5 dell'inventario): il firmware riconosce da solo quale
+> dei due c'è. Il modulo BMP280 ha 6 pin, `VCC GND SCL SDA CSB SDO`: VCC a **3V3** (molti
+> breakout non hanno regolatore, mai 5 V o BAT+), **CSB a 3V3** (modo I2C) e **SDO a GND**
+> (indirizzo 0x76). Rispetto al BMP180 è meno rumoroso (~0,1 m contro ~0,15 m dopo il
+> filtro del firmware), ma per un apogeo di 50 m vanno bene tutti e due.
 
 ### MPU6050 / GY-521 (accelerometro + giroscopio)
 
@@ -166,7 +173,7 @@ Il GY-521 ha 8 pin: `VCC GND SCL SDA XDA XCL AD0 INT`.
 
 ### Come cablarli
 
-![Bus I2C con BMP280 e MPU6050](docs/img/i2c.svg)
+![Bus I2C con BMP180 e MPU6050](docs/img/i2c.svg)
 
 - **Fili corti** (≤ 10 cm) e SDA/SCL **intrecciati** con il GND: in volo le
   vibrazioni e i disturbi della radio WiFi sono il primo nemico dell'I2C.
@@ -174,9 +181,11 @@ Il GY-521 ha 8 pin: `VCC GND SCL SDA XDA XCL AD0 INT`.
   aggiungerne altre.
 - **L'MPU6050 va fissato rigidamente** (biadesivo spesso o vite), con l'asse **Z
   allineato all'asse del razzo**: se balla dentro la spugna misura le sue vibrazioni,
-  non quelle del razzo. Il BMP280 invece va **protetto dal flusso d'aria diretto**
+  non quelle del razzo. Il BMP180 invece va **protetto dal flusso d'aria diretto**
   (un pezzetto di spugna sopra il sensore) ma in un vano **non sigillato**,
-  altrimenti non sente la variazione di pressione.
+  altrimenti non sente la variazione di pressione. Il forellino sul coperchio
+  metallico del chip va lasciato libero (spugna appoggiata, mai colla) e al buio:
+  il BMP180 è **sensibile alla luce**, quindi niente vano in plastica trasparente.
 - La camera usa un suo bus (SCCB su GPIO39/40): **nessun conflitto** con questo I2C.
 
 Nel firmware il bus si apre con `Wire.begin(5, 6)` (sono anche i pin di default
@@ -324,14 +333,14 @@ Ordine consigliato, collaudando dopo ogni passo (§9):
 2. **Due fili di alimentazione** dai pad 3V3 e GND verso un piccolo "nodo" di
    distribuzione (un pezzetto di millefori o una giunzione con guaina): da lì partono
    le alimentazioni dei sensori. Meglio che saldare tre fili sullo stesso pad.
-3. **BMP280**: VCC, GND, SDA, SCL, più i due ponticelli CSB→3V3 e SDO→GND sul modulo.
-   Collaudo: scansione I2C (deve comparire 0x76).
+3. **BMP180**: VIN, GND, SDA, SCL, nessun ponticello (con un BMP280: CSB→3V3 e SDO→GND).
+   Collaudo: scansione I2C (deve comparire 0x77; 0x76 con un BMP280).
 4. **MPU6050**: VCC, GND, SDA, SCL (AD0 a GND). Collaudo: scansione I2C
-   (0x68 e 0x76).
+   (0x68 e 0x77).
 5. **Cicalino** su D1 e GND. Collaudo: beep.
 6. **Anello LED**: resistenza da 330 Ω e condensatore saldati **sull'anello**, poi tre
    fili: VDD → BAT+, GND, DIN → D3. Collaudo: test colori.
-7. **Sistemazione nell'ogiva**: MPU6050 rigido e allineato, BMP280 riparato ma non
+7. **Sistemazione nell'ogiva**: MPU6050 rigido e allineato, BMP180 riparato ma non
    sigillato, cicalino vicino a un foro, anello visibile dall'esterno, LiPo fissata.
    Spugna densa intorno al resto. Antenna lungo l'asse dell'ogiva, lontana dalla LiPo.
 
@@ -357,7 +366,8 @@ XIAO fissati con una goccia di colla a caldo (scarico della trazione).
 |---|---|---|
 | Tensione 3V3 | multimetro tra 3V3 e GND | 3,25–3,35 V |
 | Tensione anello | multimetro tra VDD anello e GND | = tensione batteria |
-| Bus I2C | sketch di scansione (sotto) | dispositivi **0x68** e **0x76** |
+| Bus I2C | sketch di scansione (sotto) | dispositivi **0x68** e **0x77** (0x76 con un BMP280) |
+| Altimetro | comando `i` sulla seriale | `Altimetro: BMP180 ok (I2C 0x77)` |
 | Cicalino | `digitalWrite(2, HIGH)` | suono forte; corrente ≤ 35 mA |
 | Anello | rosso, verde, blu, bianco in sequenza | 8 LED, colori corretti |
 | Registrazione | `r` da seriale o pulsante BOOT | ~27 fps come prima del cablaggio |
@@ -378,8 +388,8 @@ void setup() {
 void loop() {}
 ```
 
-**Se un sensore non compare:** SDA e SCL invertiti (è l'errore più comune), CSB del
-BMP280 non a 3V3, saldatura fredda, oppure modulo alimentato da 5 V e danneggiato.
+**Se un sensore non compare:** SDA e SCL invertiti (è l'errore più comune), saldatura
+fredda, oppure modulo alimentato da 5 V e danneggiato. Con un BMP280, anche CSB non a 3V3.
 
 L'ultima prova è importante: con camera, WiFi, sensori e anello accesi insieme la
 registrazione deve restare a **~27 fps senza errori**. Se la board si riavvia quando

@@ -17,6 +17,8 @@ struct Sample {
   float gx, gy, gz;  // gradi/s
   float net;         // |a - gravità a riposo| in g: 0 sulla rampa, in volo spinta/frenata
   float tempC;
+  // Altimetro BMP180/BMP280 (NAN se assente): quota rispetto alla rampa, zero preso a terra
+  float altM, pressHpa, baroTempC;
   uint32_t ms;       // millis() della lettura
 };
 
@@ -41,6 +43,9 @@ uint8_t address();
 Sample latest();
 float magnitude(const Sample &s);  // |a| in g
 float peakG();                     // accelerazione massima dall'ultimo decollo
+bool hasBaro();                    // altimetro trovato all'avvio (modello in Baro::model())
+float apogeeM();                   // quota massima dall'ultimo decollo (NAN senza altimetro)
+float padPressureHpa();            // pressione di riferimento della rampa (quota 0)
 
 State state();
 const char *stateName(State s);

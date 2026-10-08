@@ -12,6 +12,7 @@
 
 #include "audio_rec.h"
 #include "avi_export.h"
+#include "baro.h"
 #include "buzzer.h"
 #include "camera_rec.h"
 #include "flight.h"
@@ -104,13 +105,20 @@ static void handleStatus(AsyncWebServerRequest *req) {
   const Flight::Calibration cal = Flight::calibration();
   // Età dello zero in secondi (-1 = mai preso, il sensore non è stato fermo sulla rampa)
   const long calAge = cal.rawG > 0 ? (long)((millis() - cal.ms) / 1000) : -1;
-  char sensors[200];
+  // Altimetro: oggetto "baro" solo se c'è (null altrimenti)
+  char baro[150] = "null";
+  if (Flight::hasBaro() && !isnan(a.altM)) {
+    snprintf(baro, sizeof(baro),
+             "{\"model\":\"%s\",\"alt\":%.2f,\"press\":%.2f,\"temp\":%.1f,\"apogee\":%.1f}",
+             Baro::model(), a.altM, a.pressHpa, a.baroTempC, Flight::apogeeM());
+  }
+  char sensors[320];
   snprintf(sensors, sizeof(sensors),
            "\"acc\":[%.2f,%.2f,%.2f],\"g\":%.2f,\"net\":%.2f,\"gyro\":[%.1f,%.1f,%.1f],"
-           "\"calAge\":%ld,\"calRawG\":%.3f",
-           a.ax, a.ay, a.az, Flight::magnitude(a), a.net, a.gx, a.gy, a.gz, calAge, cal.rawG);
+           "\"calAge\":%ld,\"calRawG\":%.3f,\"baro\":%s",
+           a.ax, a.ay, a.az, Flight::magnitude(a), a.net, a.gx, a.gy, a.gz, calAge, cal.rawG, baro);
   const LedRing::Manual led = LedRing::manual();
-  char buf[900];  // ~650 caratteri con tutti i campi
+  char buf[1100];  // ~750 caratteri con tutti i campi
   snprintf(buf, sizeof(buf),
            "{\"time\":%lld,\"staIp\":\"%s\",\"recording\":%s,\"dir\":\"%s\",\"secs\":%.1f,"
            "\"frames\":%lu,\"fps\":%.1f,\"audio\":%.1f,\"camera\":\"%s\",\"sd\":%s,"

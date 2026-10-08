@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" width="1000" height="680" font-family="Segoe UI, Helvetica, Arial, sans-serif">
-  <title>Schema generale: XIAO, LiPo, BMP280, MPU6050, cicalino e anello LED</title>
+  <title>Schema generale: XIAO, LiPo, BMP180, MPU6050, cicalino e anello LED</title>
   <rect x="1" y="1" width="998" height="678" rx="12" fill="#ffffff" stroke="#d0d7de"/>
   <text x="500" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#1f2328">Elettronica di volo — schema generale</text>
   <text x="500" y="56" text-anchor="middle" font-size="13" fill="#57606a">XIAO vista dall'alto, USB-C in alto, pad nella posizione reale · punto = collegamento · ponticello = nessun contatto</text>
@@ -126,14 +126,14 @@
   <rect x="640" y="340" width="150" height="120" rx="8" fill="#6f42c1" stroke="#4c2889" stroke-width="2"/>
   <rect x="820" y="340" width="150" height="120" rx="8" fill="#1d4e89" stroke="#0f2f57" stroke-width="2"/>
   <g font-size="10" font-weight="600" text-anchor="middle" fill="#ffffff">
-    <text x="670" y="356">VCC</text><text x="700" y="356">GND</text>
+    <text x="670" y="356">VIN</text><text x="700" y="356">GND</text>
     <text x="670" y="452">SCL</text><text x="700" y="452">SDA</text>
     <text x="850" y="356">VCC</text><text x="880" y="356">GND</text>
     <text x="850" y="452">SCL</text><text x="880" y="452">SDA</text>
   </g>
-  <text x="715" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">BMP280</text>
-  <text x="715" y="409" text-anchor="middle" font-size="11" fill="#e2d6f7">altimetro · 0x76</text>
-  <text x="715" y="425" text-anchor="middle" font-size="9.5" fill="#e2d6f7">CSB→3V3 · SDO→GND</text>
+  <text x="715" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">BMP180</text>
+  <text x="715" y="409" text-anchor="middle" font-size="11" fill="#e2d6f7">altimetro · 0x77</text>
+  <text x="715" y="425" text-anchor="middle" font-size="9.5" fill="#e2d6f7">GY-68 · 4 pin</text>
   <text x="895" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">MPU6050</text>
   <text x="895" y="409" text-anchor="middle" font-size="11" fill="#c8dcf5">GY-521 · 0x68</text>
   <text x="895" y="425" text-anchor="middle" font-size="9.5" fill="#c8dcf5">AD0→GND</text>

@@ -252,7 +252,7 @@ Sistema di telemetria + log dati + video da montare nell'**ogiva** del razzo
 ### Architettura
 
 - **MCU di volo**: ESP32-S3 con camera, in ogiva
-- **Sensori I2C** sullo stesso bus: BMP280 + MPU6050
+- **Sensori I2C** sullo stesso bus: BMP180 + MPU6050
 - **Storage**: microSD per log ad alta frequenza + video
 - **Recupero**: passivo (paracadute del kit) + buzzer ritrovamento
 - **Telemetria**: WiFi/BLE live a terra (range utile ~50 m)
@@ -291,7 +291,7 @@ per il travaso pesante a razzo recuperato (scarico di video e log, la XIAO in AP
 
 | Sensore | Bus | Cosa abilita | Priorità |
 |---|---|---|---|
-| **BMP280** | I2C | Quota live, apogeo, profilo di volo, T/P cabina | ⭐⭐⭐ |
+| **BMP180** (o BMP280) | I2C | Quota live, apogeo, profilo di volo, T/P cabina | ⭐⭐⭐ |
 | **MPU6050** | I2C | Accelerazione lancio, giroscopio (roll/yaw/pitch), rilevazione apogeo via segno accel | ⭐⭐⭐ |
 | **microSD** (slot integrato) | SPI | Log ≥100 Hz + video AVI | ⭐⭐⭐ |
 | **Camera OV2640** | DVP | Video 640×480 a 15–25 fps, foto, analisi traiettoria | ⭐⭐ |
@@ -303,7 +303,8 @@ per il travaso pesante a razzo recuperato (scarico di video e log, la XIAO in AP
 | **GPS NEO-M8N** | UART | Ritrovamento a distanza (≥70 m). Costa ~20 g | ⭐ opz |
 | **Accelerometro high-g** | I2C | Picco reale al lancio (l'MPU6050 satura a ±16 g) — vedi §15 | ⭐ opz |
 
-La configurazione di volo attuale è **BMP280 + MPU6050**, entrambi già in inventario.
+La configurazione di volo attuale è **BMP180 + MPU6050**. Il firmware riconosce da solo
+anche il BMP280 (5 in inventario): si monta l'uno o l'altro senza ricompilare.
 I sensori marcati *opz* sono valutati in **§15**, con il registro delle decisioni.
 
 ### Sensori del lab da NON portare in volo
@@ -381,8 +382,8 @@ strapping (selezione JTAG), quindi comunque da evitare.
 | Pad | GPIO | Stato | Assegnazione |
 |---|---|---|---|
 | D1 | 2 | **usato** | **Buzzer attivo 12095** |
-| D4 | 5 | **usato** | **I2C SDA** → BMP280 + MPU6050 |
-| D5 | 6 | **usato** | **I2C SCL** → BMP280 + MPU6050 |
+| D4 | 5 | **usato** | **I2C SDA** → BMP180 + MPU6050 |
+| D5 | 6 | **usato** | **I2C SCL** → BMP180 + MPU6050 |
 | D3 | 4 | **usato** | **Anello LED WS2812B 8 LED** (dati, via 330 Ω) — vedi [cablaggio.md](cablaggio.md) |
 | D0 | 1 | libero (ADC1) | Partitore tensione batteria *(opzionale)* |
 | D6 | 43 | libero (UART0 TX) | — *(GPS NEO-M8N se mai servisse)* |
@@ -410,7 +411,7 @@ strapping (selezione JTAG), quindi comunque da evitare.
 
 #### Bus I2C
 
-**D4 = SDA (GPIO5), D5 = SCL (GPIO6)**, i pin I2C di default. BMP280 e MPU6050 stanno
+**D4 = SDA (GPIO5), D5 = SCL (GPIO6)**, i pin I2C di default. BMP180 e MPU6050 stanno
 sullo stesso bus senza conflitti, avendo indirizzi diversi. La camera usa un suo bus
 SCCB separato (GPIO39/40): **non interferisce**.
 
@@ -418,10 +419,10 @@ SCCB separato (GPIO39/40): **non interferisce**.
 Se in un secondo momento si aggiunge l'RTC al bus, spostare l'MPU6050 a **0x69**
 portando il suo pin **AD0 a 3V3** (sui breakout GY-521 è un pad dedicato).
 
-Indirizzi dei sensori previsti: BMP280 `0x76/0x77` · MPU6050 `0x68` (o `0x69`) ·
+Indirizzi dei sensori previsti: BMP180 `0x77` (BMP280 `0x76/0x77`) · MPU6050 `0x68` (o `0x69`) ·
 DS3231 `0x68` · BH1750 `0x23/0x5C` · TSL2591 `0x29`.
 
-I breakout GY-521 e BMP280 hanno già le **pull-up** a bordo: con 2–3 moduli in
+I moduli GY-521 e BMP180/BMP280 hanno già le **pull-up** a bordo: con 2–3 moduli in
 parallelo il valore risultante resta accettabile a 3,3 V, non serve aggiungerne.
 
 #### Schema di cablaggio
@@ -430,7 +431,7 @@ parallelo il valore risultante resta accettabile a 3,3 V, non serve aggiungerne.
 
 ```
 XIAO ESP32-S3 Sense
-├── D4 / D5       → I2C: BMP280 (0x76) + MPU6050 (0x68)
+├── D4 / D5       → I2C: BMP180 (0x77) + MPU6050 (0x68)
 ├── D1            → buzzer attivo 12095 (diretto, 25 mA)
 ├── D8/D9/D10+G21 → 🔒 microSD (SPI, slot sulla shield Sense)
 │
@@ -636,7 +637,7 @@ Parcheggio per inserzioni segnalate ma non ancora decise.
 
 | Pezzo | Q.tà | Uso nel razzo |
 |---|---|---|
-| ✅ BMP280 breakout | 5 | Altimetria di volo |
+| ✅ BMP280 breakout | 5 | Altimetria (alternativa al BMP180 di volo, riconosciuta dal firmware) |
 | ✅ microSD 32 GB | 5 | Log + video (slot della XIAO Sense) |
 | ✅ ESP32-S3 DevKitC-1 (DUBEUYEW) | 2 | Ground station, test a banco, kit didattici |
 | ✅ Freenove ESP32-WROVER + camera | 1 | Ground station / test pipeline camera |
@@ -660,6 +661,11 @@ Parcheggio per inserzioni segnalate ma non ancora decise.
 ### Stato delle decisioni — 4 settembre 2026
 
 **Si vola con MPU6050 + BMP280** (entrambi già in inventario) e si valuta sui dati reali.
+
+> **Aggiornamento 8 ottobre 2026:** in volo va un **BMP180** (modulo GY-68). Il firmware
+> riconosce in automatico BMP180 e BMP280. Il BMP180 misura a comando a 100 Hz con un
+> filtro software: rumore ~0,15 m contro ~0,1 m del BMP280, indifferente per un apogeo
+> di 50 m. Il confronto col DPS310 qui sotto vale anche per lui.
 
 | Candidato | Costo | Decisione | Perché |
 |---|---|---|---|
@@ -725,7 +731,7 @@ limite inferiore di `Δv`**, e la differenza rispetto al `Δv` barometrico misur
 tagliata via dalla saturazione.
 
 ⚠️ **Fori di sfiato — l'errore che conta più di ogni sensore.** A 35 m/s la pressione
-dinamica vale `½·ρ·v² ≈ 735 Pa`, che il BMP280 legge come **~6 m di quota fantasma**:
+dinamica vale `½·ρ·v² ≈ 735 Pa`, che il barometro legge come **~6 m di quota fantasma**:
 sei volte il suo rumore. Rimedio standard della missilistica: fori piccoli, laterali, a
 90° rispetto al flusso e lontani dall'ogiva, così la cabina vede pressione statica.
 

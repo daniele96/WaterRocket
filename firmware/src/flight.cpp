@@ -7,6 +7,7 @@
 #include <atomic>
 #include <mutex>
 
+#include "baro.h"
 #include "board_pins.h"
 
 // --- Soglie del riconoscimento delle fasi (da tarare con i primi lanci) ---
@@ -34,6 +35,8 @@ static constexpr uint32_t CAL_SAMPLES = 150;
 static constexpr float CAL_DELTA_G = 0.03f;
 static constexpr float CAL_GYRO_DPS = 3.0f;
 static constexpr float CAL_MIN_G = 0.7f, CAL_MAX_G = 1.4f;  // fuori = non è appoggiato fermo
+// Quota 0 sulla rampa: media mobile della pressione con costante di tempo ~2 s (10 ms / 2 s)
+static constexpr float PAD_P_ALPHA = 0.005f;
 
 static constexpr uint32_t SAMPLE_PERIOD_MS = 10;  // 100 Hz
 // 100 kHz: con fili volanti e i pull-up del modulo i 400 kHz davano errori.
@@ -67,6 +70,9 @@ static bool s_ready = false;
 static std::mutex s_mutex;  // protegge s_sample e s_peak
 static Sample s_sample = {};
 static float s_peak = 0;
+static bool s_hasBaro = false;
+static float s_p0 = 0;      // Pa, pressione della rampa = quota 0 (protetta da s_mutex)
+static float s_apogee = 0;  // m, quota massima dall'ultimo decollo (protetta da s_mutex)
 static std::atomic<State> s_state = State::Ground;
 static std::atomic<uint32_t> s_launchMs = 0;
 static std::atomic<uint32_t> s_landedMs = 0;
@@ -125,6 +131,7 @@ static bool readSample(Sample &s) {
   s.gx = raw(8) / GYRO_LSB_PER_DPS;
   s.gy = raw(10) / GYRO_LSB_PER_DPS;
   s.gz = raw(12) / GYRO_LSB_PER_DPS;
+  s.altM = s.pressHpa = s.baroTempC = NAN;  // li riempie il task se c'è l'altimetro
   s.ms = millis();
   return true;
 }
@@ -192,6 +199,7 @@ static void enterState(State st, uint32_t now) {
     s_landedMs = 0;
     std::lock_guard<std::mutex> lock(s_mutex);
     s_peak = 0;
+    s_apogee = 0;
   } else if (st == State::Landed) {
     if (!s_launchMs) s_launchMs = now;  // atterraggio simulato senza decollo
     s_landedMs = now;
@@ -208,6 +216,7 @@ static void flightTask(void *) {
   Sample ref = {};          // campione di riferimento della finestra "fermo"
   uint32_t readErrors = 0;
   CalWindow calWin;
+  bool p0Snap = true;  // prossima lettura dell'altimetro = nuova quota 0
 
   TickType_t wake = xTaskGetTickCount();
   for (;;) {
@@ -216,6 +225,7 @@ static void flightTask(void *) {
     if (s_reqReset.exchange(false)) {
       enterState(State::Ground, millis());
       aboveSince = 0;
+      p0Snap = true;  // dopo il recupero si è in un altro punto: la quota 0 non va trascinata
     }
     if (s_reqLaunch.exchange(false)) {
       enterState(State::Flying, millis());
@@ -234,13 +244,37 @@ static void flightTask(void *) {
     const bool calDone = s_state == State::Ground && calWin.add(raw, newCal);
     if (s_state != State::Ground) calWin.restart();
 
+    // Altimetro: stesso bus, stesso task, letto a ogni giro (100 Hz). Il BMP280 aggiorna da
+    // solo a ~44 Hz e tra due misure il valore si ripete; il BMP180 misura a comando e qui
+    // fa un passo (legge la conversione precedente e avvia la successiva): pressione nuova a
+    // ogni giro, salvo uno al secondo dedicato alla temperatura
+    float press = NAN, baroT = NAN;
+    const bool baroOk = s_hasBaro && Baro::read(press, baroT);
+
     Sample s;
     {
       std::lock_guard<std::mutex> lock(s_mutex);
       if (calDone) s_cal = newCal;
       s = calibrated(raw, s_cal);
+      if (baroOk) {
+        // Quota 0 = pressione della rampa: a terra segue il meteo con una media lenta,
+        // dal decollo resta bloccata. Al riarmo riparte dalla pressione del momento.
+        if (s_state == State::Ground) {
+          s_p0 = (s_p0 > 0 && !p0Snap) ? s_p0 + (press - s_p0) * PAD_P_ALPHA : press;
+          p0Snap = false;
+        }
+        s.pressHpa = press / 100.0f;
+        s.altM = Baro::altitude(press, s_p0);
+        s.baroTempC = baroT;
+      } else {
+        // Lettura persa: si tiene l'ultima (NAN se l'altimetro non c'è)
+        s.pressHpa = s_sample.pressHpa;
+        s.altM = s_sample.altM;
+        s.baroTempC = s_sample.baroTempC;
+      }
       s_sample = s;
       if (s_state == State::Flying && magnitude(s) > s_peak) s_peak = magnitude(s);
+      if (s_state == State::Flying && s.altM > s_apogee) s_apogee = s.altM;
     }
     const float g = magnitude(s);
 
@@ -290,8 +324,10 @@ static void logTask(void *) {
     s_logRun = false;
   } else {
     // Ogni colonna dopo il tempo diventa un grafico nella pagina web
-    f.println("t_ms,acc X (g),acc Y (g),acc Z (g),|acc| (g),acc netta (g),giro X (°/s),"
-              "giro Y (°/s),giro Z (°/s),in volo (1 = sì)");
+    // Le colonne dell'altimetro ci sono solo se è collegato (BMP180 o BMP280)
+    f.print("t_ms,acc X (g),acc Y (g),acc Z (g),|acc| (g),acc netta (g),giro X (°/s),"
+            "giro Y (°/s),giro Z (°/s),in volo (1 = sì)");
+    f.println(s_hasBaro ? ",quota (m),pressione (hPa),temperatura aria (°C)" : "");
   }
 
   static char buf[LOG_BUF_SIZE];
@@ -303,13 +339,18 @@ static void logTask(void *) {
     if (xQueueReceive(s_logQueue, &rec, pdMS_TO_TICKS(100)) == pdTRUE) {
       const Sample &s = rec.s;
       used += snprintf(buf + used, sizeof(buf) - used,
-                       "%lu,%.3f,%.3f,%.3f,%.3f,%.3f,%.1f,%.1f,%.1f,%d\n",
+                       "%lu,%.3f,%.3f,%.3f,%.3f,%.3f,%.1f,%.1f,%.1f,%d",
                        (unsigned long)(s.ms - s_logStartMs), s.ax, s.ay, s.az, magnitude(s),
                        s.net, s.gx, s.gy, s.gz, rec.state == State::Flying ? 1 : 0);
+      if (s_hasBaro) {
+        used += snprintf(buf + used, sizeof(buf) - used, ",%.2f,%.2f,%.1f",
+                         s.altM, s.pressHpa, s.baroTempC);
+      }
+      used += snprintf(buf + used, sizeof(buf) - used, "\n");
       s_logSamples++;
     }
     // Scrive a blocchi: una riga alla volta sulla SD sarebbe troppo lenta
-    if (used > sizeof(buf) - 128 || (used && millis() - lastFlush >= LOG_FLUSH_MS)) {
+    if (used > sizeof(buf) - 192 || (used && millis() - lastFlush >= LOG_FLUSH_MS)) {
       if (f.write((uint8_t *)buf, used) != used) {
         log_e("Scrittura sensors.csv fallita (SD piena o rimossa?)");
         break;
@@ -426,6 +467,9 @@ bool begin() {
     return false;
   }
 
+  // Altimetro opzionale sullo stesso bus: se manca, il resto funziona uguale
+  s_hasBaro = Baro::begin();
+
   s_logQueue = xQueueCreate(LOG_QUEUE_LEN, sizeof(LogRecord));
   s_logDone = xSemaphoreCreateBinary();
 
@@ -449,6 +493,19 @@ Sample latest() {
 float peakG() {
   std::lock_guard<std::mutex> lock(s_mutex);
   return s_peak;
+}
+
+bool hasBaro() { return s_hasBaro; }
+
+float apogeeM() {
+  if (!s_hasBaro) return NAN;
+  std::lock_guard<std::mutex> lock(s_mutex);
+  return s_apogee;
+}
+
+float padPressureHpa() {
+  std::lock_guard<std::mutex> lock(s_mutex);
+  return s_hasBaro ? s_p0 / 100.0f : NAN;
 }
 
 State state() { return s_state; }

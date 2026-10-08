@@ -18,6 +18,7 @@
 #include <mutex>
 
 #include "audio_rec.h"
+#include "baro.h"
 #include "board_pins.h"
 #include "buzzer.h"
 #include "camera_rec.h"
@@ -69,6 +70,11 @@ static void printChipInfo() {
   Serial.printf("Microfono: %s\n", AudioRec::isReady() ? "ok" : "non inizializzato");
   if (Flight::isReady()) {
     Serial.printf("MPU6050:   ok (I2C 0x%02X)\n", Flight::address());
+    if (Flight::hasBaro()) {
+      Serial.printf("Altimetro: %s ok (I2C 0x%02X)\n", Baro::model(), Baro::address());
+    } else {
+      Serial.println("Altimetro: non trovato (BMP180 o BMP280)");
+    }
   } else {
     Serial.println("MPU6050:   non trovato");
   }
@@ -150,6 +156,11 @@ static void stopRecording() {
     info.printf("cal_raw_g=%.4f\ncal_scale=%.4f\ncal_gyro_bias_dps=%.2f,%.2f,%.2f\n"
                 "cal_gravity_dir=%.3f,%.3f,%.3f\n",
                 c.rawG, c.scale, c.gx, c.gy, c.gz, c.rx, c.ry, c.rz);
+    if (Flight::hasBaro()) {
+      // Il modello serve all'analisi: rumore e frequenza della quota cambiano fra i due
+      info.printf("baro=%s\napogee_m=%.2f\npad_pressure_hpa=%.2f\n", Baro::model(), Flight::apogeeM(),
+                  Flight::padPressureHpa());
+    }
     info.close();
   }
 
@@ -274,16 +285,19 @@ static void printStatus() {
   }
   if (Flight::isReady()) {
     const Flight::Sample s = Flight::latest();
-    Serial.printf("           %s | |a| %.2f g | picco %.1f g\n",
+    Serial.printf("           %s | |a| %.2f g | picco %.1f g",
                   Flight::stateName(Flight::state()), Flight::magnitude(s), Flight::peakG());
+    if (Flight::hasBaro()) Serial.printf(" | quota %.1f m | apogeo %.1f m", s.altM, Flight::apogeeM());
+    Serial.println();
   }
 }
 
 static void printImu() {
   const Flight::Sample s = Flight::latest();
-  Serial.printf("acc g %6.2f %6.2f %6.2f |a| %5.2f netta %5.2f | giro dps %7.1f %7.1f %7.1f | %.1f C | %s\n",
-                s.ax, s.ay, s.az, Flight::magnitude(s), s.net, s.gx, s.gy, s.gz, s.tempC,
-                Flight::stateName(Flight::state()));
+  Serial.printf("acc g %6.2f %6.2f %6.2f |a| %5.2f netta %5.2f | giro dps %7.1f %7.1f %7.1f | %.1f C",
+                s.ax, s.ay, s.az, Flight::magnitude(s), s.net, s.gx, s.gy, s.gz, s.tempC);
+  if (Flight::hasBaro()) Serial.printf(" | quota %6.2f m %7.2f hPa", s.altM, s.pressHpa);
+  Serial.printf(" | %s\n", Flight::stateName(Flight::state()));
 }
 
 // Annuncia i cambi di fase e fa suonare il cicalino da atterrato
@@ -299,8 +313,10 @@ static void handleFlight() {
       Serial.println(">> DECOLLO");
       break;
     case Flight::State::Landed:
-      Serial.printf(">> ATTERRATO dopo %.1f s di volo, picco %.1f g\n",
+      Serial.printf(">> ATTERRATO dopo %.1f s di volo, picco %.1f g",
                     (Flight::landedMs() - Flight::launchMs()) / 1000.0f, Flight::peakG());
+      if (Flight::hasBaro()) Serial.printf(", quota massima %.1f m", Flight::apogeeM());
+      Serial.println();
       Buzzer::beep(200, 800, 0);  // ritrovamento: 200 ms on / 800 ms off
       break;
     case Flight::State::Ground:
