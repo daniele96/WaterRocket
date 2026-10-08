@@ -23,6 +23,8 @@ Altri documenti:
 
 - **[cablaggio.md](cablaggio.md)** — come collegare batteria, sensori I2C, cicalino
   e anello LED, con schemi, collaudo e checklist pre-volo
+- **[3dModels/cintura](3dModels/cintura/README.md)** — cintura portaelettronica: due pod
+  stampati sulla bottiglia (elettronica e batteria), modello OpenSCAD parametrico
 - **[firmware/](firmware/)** — registratore di volo (video + audio su microSD) e
   piattaforma web dei lanci via WiFi
 - **[lab.md](lab.md)** — laboratorio con i bambini

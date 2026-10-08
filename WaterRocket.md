@@ -246,12 +246,13 @@ deve restare la bottiglia PET** (il PLA/PETG stampato non è affidabile per cont
 
 ## 13. Elettronica di bordo 🔌
 
-Sistema di telemetria + log dati + video da montare nell'**ogiva** del razzo
-(scende col paracadute passivo del kit — vedi §3 e nota sotto).
+Sistema di telemetria + log dati + video montato su una **cintura** attorno alla
+bottiglia: due pod opposti, elettronica da una parte e batteria dall'altra (vedi
+*Posizionamento meccanico* più sotto).
 
 ### Architettura
 
-- **MCU di volo**: ESP32-S3 con camera, in ogiva
+- **MCU di volo**: ESP32-S3 con camera, nel pod elettronica della cintura
 - **Sensori I2C** sullo stesso bus: BMP180 + MPU6050
 - **Storage**: microSD per log ad alta frequenza + video
 - **Recupero**: passivo (paracadute del kit) + buzzer ritrovamento
@@ -506,11 +507,18 @@ didattica.
 
 ### Posizionamento meccanico
 
-Elettronica **nell'ogiva** (verde del kit AliExpress, o sostitutiva stampata 3D più
-capiente — vedi §12). L'ogiva si stacca all'apogeo per inerzia, gli elastici cedono
-e tira fuori il paracadute; scende legata al corpo via shock cord. **Annegare PCB e
-LiPo in spugna densa** dentro un vano dedicato. LiPo **sempre fissata** con biadesivo
-o fascette, mai libera.
+Elettronica su una **cintura**: due pod stampati, uno di fronte all'altro sulla
+bottiglia in pressione, tenuti da due giri di elastico. Da una parte la XIAO (camera
+inclinata di 45° verso l'ugello), i sensori, il cicalino e l'anello LED; dall'altra
+la LiPo. Le sagome esterne sono uguali, così la resistenza dell'aria resta simmetrica,
+e i pesi differiscono di pochi grammi. L'ogiva resta libera per il paracadute.
+Modello parametrico, stampa e montaggio: [3dModels/cintura](3dModels/cintura/README.md).
+
+- L'MPU6050 sta a ~6 cm dall'asse: se il razzo ruota su se stesso, l'accelerometro
+  misura anche la centrifuga (`ω²·r`, ~6 g a 5 giri/s). Nell'analisi si toglie col
+  giroscopio.
+- Sulla rampa la bottiglia è piena d'acqua, che assorbe il WiFi: il pod elettronica va
+  rivolto verso chi controlla il lancio.
 
 ### Architettura firmware suggerita
 
@@ -583,8 +591,8 @@ montata Seeed dichiara 100 m+, ben oltre i ~50–70 m di quota del razzo. Riga a
 - ⚠️ Verificare nelle foto dell'inserzione AliExpress che le antenne siano incluse. Se
   non ci sono, ~3 €/pz ([Seeed](https://www.seeedstudio.com/2-4GHz-2-81dBi-Antenna-for-XIAO-ESP32C3-p-5475.html)
   o [Amazon](https://www.amazon.it/s?k=antenna+IPEX+UFL+2.4GHz)).
-- In volo orientarla **lungo l'asse dell'ogiva** e lontana dalla LiPo: la busta
-  metallizzata scherma.
+- In volo sta incollata **fuori sul fianco del pod elettronica**, nella sua sede, lontana
+  dalla LiPo (che è nel pod opposto): la busta metallizzata scherma.
 
 **Batteria LiPo 602040 400 mAh — verificata ✅**
 
@@ -597,7 +605,7 @@ Scheda tecnica confrontata coi requisiti: passa su tutta la linea.
 | Connettore | JST 1.25 | JST 1.25 mm | ✅ |
 | Protezione | PCM | overcharge / **over-discharge** / overcurrent / short | ✅ |
 | Peso | ≤ 12 g | ~9–11 g stimati dal volume | ✅ |
-| Ingombro | vano ogiva | 6 × 20 × 42 mm | ✅ |
+| Ingombro | tasca del pod batteria | 6 × 20 × 42 mm | ✅ |
 | Scarica | ≥ 5C | non dichiarato | ⚠️ vedi sotto |
 
 - **Il C-rating mancante non è un problema.** È una cella da elettronica di consumo, non
@@ -616,7 +624,8 @@ Scheda tecnica confrontata coi requisiti: passa su tutta la linea.
 tagliare il connettore della cella e saldare i fili funziona, ma butta via la strategia
 di rotazione. Si salda sui pad la **controparte** del connettore. Il kit contiene
 entrambi i generi, quindi qualunque sia quello sulla cella si ha il suo mate. 28 AWG
-regge oltre 1 A. **Accorciare i 15 cm a 3–4 cm.**
+regge oltre 1 A. **Non accorciarlo**: con la cintura la batteria sta nel pod opposto e
+servono ~20–22 cm fra i pad e il connettore.
 
 ⚠️ **Verificare la polarità col multimetro prima del primo innesto.** Rosso = +,
 nero = − è la convenzione ma non è garantita fra fornitori diversi. Sulla XIAO **BAT- è

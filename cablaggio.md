@@ -60,7 +60,7 @@ Riepilogo dei collegamenti:
 | Guaina termorestringente | — | — |
 
 **Attrezzi:** saldatore a punta fine, stagno, flussante, multimetro, pinzette,
-nastro biadesivo spesso, spugna densa per l'ogiva.
+nastro biadesivo spesso, un pezzetto di spugna (copre il BMP180).
 
 💡 **Convenzione dei colori** (da rispettare, aiuta tantissimo nel debug):
 rosso = BAT+, arancio = 3V3, nero = GND, blu = SDA, giallo = SCL,
@@ -99,7 +99,10 @@ La XIAO non ha connettore batteria, solo i due **pad BAT+ / BAT−** sul retro. 
 sui pad un pigtail JST 1.25 (la **controparte** del connettore della cella), così le
 batterie si scambiano in campo senza saldare.
 
-1. Accorcia il pigtail a **3–4 cm**.
+1. **Non accorciare il pigtail**: la batteria sta nel pod opposto della cintura
+   ([3dModels/cintura](3dModels/cintura/README.md)) e fra pad e connettore servono
+   ~20–22 cm. Se il pigtail più il cavo della cella non bastano, allungalo con filo
+   da 28 AWG.
 2. **Prima di saldare**, innesta il pigtail sulla cella e misura col multimetro quale
    filo è il +. Il colore non basta: rosso = + è una convenzione, non una garanzia.
 3. Stagna i pad, poi salda: **BAT− = pad vicino alla USB-C**, BAT+ = pad lontano.
@@ -215,8 +218,8 @@ della XIAO, quindi basta `Wire.begin()`).
   antiparallelo sul cicalino.
 - Togli l'**adesivo protettivo** dal foro del cicalino dopo la saldatura (serve solo
   per il lavaggio della scheda): con l'adesivo il volume cala moltissimo.
-- Posizionalo vicino a un **foro dell'ogiva**: dentro la spugna, chiuso, si sente a
-  pochi metri.
+- Nel pod della cintura va nella sua coppa sul fianco, col foro del suono contro il
+  foro della parete: chiuso dentro, si sentirebbe a pochi metri.
 
 ---
 
@@ -279,7 +282,7 @@ traslatore di livello (es. 74AHCT125). Con 8 LED e fili corti in genere non serv
 Il **100 µF** tra VDD e GND, saldato vicino all'anello, assorbe i picchi di corrente
 quando i LED si accendono di colpo (lampeggi del ritrovamento) e protegge l'anello
 all'innesto della batteria. Rispetta la polarità: la fascia col segno − va a GND.
-Se nell'ogiva non c'è spazio si può omettere, ma è il primo indiziato in caso di reset.
+Se non c'è spazio si può omettere, ma è il primo indiziato in caso di reset.
 
 ### Luminosità e consumi
 
@@ -340,9 +343,10 @@ Ordine consigliato, collaudando dopo ogni passo (§9):
 5. **Cicalino** su D1 e GND. Collaudo: beep.
 6. **Anello LED**: resistenza da 330 Ω e condensatore saldati **sull'anello**, poi tre
    fili: VDD → BAT+, GND, DIN → D3. Collaudo: test colori.
-7. **Sistemazione nell'ogiva**: MPU6050 rigido e allineato, BMP180 riparato ma non
-   sigillato, cicalino vicino a un foro, anello visibile dall'esterno, LiPo fissata.
-   Spugna densa intorno al resto. Antenna lungo l'asse dell'ogiva, lontana dalla LiPo.
+7. **Sistemazione nei pod della cintura**, passo per passo in
+   [3dModels/cintura/README.md](3dModels/cintura/README.md): XIAO sulla slitta,
+   MPU6050 avvitato rigido, BMP180 coperto di spugna, cicalino nella sua coppa,
+   anello sul tetto, antenna fuori sul fianco, LiPo nel pod opposto.
 
 Tutte le giunzioni con **guaina termorestringente**; i fili che escono dai pad della
 XIAO fissati con una goccia di colla a caldo (scarico della trazione).
@@ -399,13 +403,14 @@ l'anello lampeggia, manca il condensatore o l'anello è stato collegato al 3V3.
 
 ## 10. Checklist prima del volo
 
-- [ ] Batteria carica (≥ 3,9 V) e **fissata** nell'ogiva
+- [ ] Batteria carica (≥ 3,9 V) e **fissata** nella sua tasca
 - [ ] Polarità del pigtail verificata (batteria nuova? misurala)
-- [ ] Antenna innestata e orientata lungo l'asse
+- [ ] Antenna innestata, nella sua sede sul fianco e coperta di nastro
 - [ ] Anello verde (pronto) → nessun errore di SD o sensori
 - [ ] Registrazione avviata (anello rosso pulsante, beep corto)
 - [ ] Foro del cicalino libero, adesivo protettivo rimosso
-- [ ] Ogiva chiusa, spugna al suo posto, nessun filo in tensione
+- [ ] Slitta bloccata dai due perni, nastro sull'apertura USB, spugna sul BMP180,
+      nessun filo in tensione
 - [ ] Dopo il recupero: fermare la registrazione **prima** di staccare la batteria
       (oppure accettare di perdere l'ultimo secondo, vedi firmware)
 - [ ] A fine giornata: **batteria staccata** e messa in carica
