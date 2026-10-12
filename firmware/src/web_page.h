@@ -65,6 +65,8 @@ button:disabled{opacity:.45;cursor:default}
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
 .stat b{display:block;font-size:16px}
 .stat span{font-size:12px;color:var(--mut)}
+.stat.click{cursor:pointer}
+.stat.click:hover b{color:var(--acc)}
 label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
 input,textarea,select{width:100%;font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:7px 9px}
 textarea{min-height:70px;resize:vertical}
@@ -280,7 +282,11 @@ function render() {
 
 // ---------- home: elenco lanci ----------
 function launchCard(l) {
+  // Quota massima e picco li scrive il firmware in info.txt solo se nella registrazione c'è un volo
+  const flew = +l.info.flights > 0;
   const chips = [
+    flew && l.info.apogee_m != null ? `↑ ${(+l.info.apogee_m).toFixed(1)} m` : '',
+    flew && l.info.peak_g != null ? `${(+l.info.peak_g).toFixed(1)} g` : '',
     l.meta.pressure_bar != null && l.meta.pressure_bar !== '' ? `${l.meta.pressure_bar} bar` : '',
     l.meta.water_pct != null && l.meta.water_pct !== '' ? `${l.meta.water_pct}% acqua` : '',
     l.meta.altitude_m != null && l.meta.altitude_m !== '' ? `${l.meta.altitude_m} m` : '',
@@ -323,7 +329,7 @@ function renderHome() {
       <div class="row" style="margin-top:8px;flex-wrap:wrap">
         <button onclick="sim('buzz_on')">🔔 Accendi cicalino</button>
         <button onclick="sim('buzz_off')">🔕 Spegni cicalino</button>
-        <button id="testbtn" onclick="toggleTestMode()" title="Decollo con un colpo della mano (2 g per 10 ms) invece della spinta vera (2,5 g per 30 ms). Registra da sola ogni prova: parte all'attivazione e si ferma 3 s dopo l'atterraggio. Anello LED al massimo al 25% (sull'USB)">${testLabel()}</button>
+        <button id="testbtn" onclick="toggleTestMode()" title="Decollo alzando la scheda con decisione (1,5 g per 2 letture) invece della spinta vera (2,5 g per 4 letture). Registra da sola ogni prova: parte all'attivazione e si ferma 3 s dopo l'atterraggio. Anello LED al massimo al 25% (sull'USB)">${testLabel()}</button>
       </div>
       <div class="row" style="margin-top:8px;flex-wrap:wrap">
         <b style="font-size:14px">💡 Anello</b>
@@ -496,7 +502,7 @@ async function toggleTestMode() {
   const on = !S.status?.testMode;
   try {
     await api('/api/testmode?on=' + (on ? 1 : 0), {method: 'POST'});
-    toast(on ? 'Modalità prova attiva: registrazione avviata, basta un colpo secco della mano'
+    toast(on ? 'Modalità prova attiva: registrazione avviata, alza la scheda con decisione per il decollo'
              : 'Modalità prova disattivata: soglia di volo normale');
   } catch (e) {
     toast('Errore: ' + e.message);
@@ -576,6 +582,12 @@ function renderLaunch(l) {
       </div>
 
       <div>
+        <div class="card" id="flightcard">
+          <h3>🚀 Volo</h3>
+          <div class="fbody mut">${l.recording ? 'Registrazione in corso...'
+            : l.hasSensors ? 'Analisi dei dati...' : 'Nessun dato sensori per questo lancio.'}</div>
+        </div>
+
         <div class="card">
           <h3>Registrazione</h3>
           <div class="stats">
@@ -653,12 +665,16 @@ function exportLaunch(fmt) {
   const data = {
     lancio: l.id, nome: l.name, data: l.date ? l.date.toISOString() : null,
     parametri: Object.fromEntries([...FIELDS.map(f => [f.k, l.meta[f.k] ?? null]), ['notes', l.meta.notes ?? '']]),
+    // Riepilogo calcolato dai grafici (tempi in ms dall'inizio della registrazione)
+    volo: l.flight ?? null,
     registrazione: l.info,
     file: l.files,
   };
   if (fmt === 'json') return download(`${l.id}.json`, JSON.stringify(data, null, 2), 'application/json');
   const rows = [['campo', 'valore'], ['lancio', l.id], ['nome', l.name], ['data', data.data ?? ''],
-    ...Object.entries(data.parametri), ...Object.entries(l.info)];
+    ...Object.entries(data.parametri),
+    ...Object.entries(l.flight ?? {}).map(([k, v]) => ['volo_' + k, v ?? '']),
+    ...Object.entries(l.info)];
   download(`${l.id}.csv`, rows.map(r => r.map(csvCell).join(',')).join('\n'), 'text/csv');
 }
 
@@ -889,18 +905,116 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') Player.step(1);
 });
 
+// ---------- riepilogo del volo, calcolato da sensors.csv ----------
+// Soglie, coerenti con il firmware (flight.cpp): la spinta è il tratto iniziale con |a| oltre
+// THRUST_G; l'impatto è l'ultimo istante "mosso" (|a| lontano da 1 g) prima dei 3 s di quiete
+// che fanno dichiarare l'atterraggio. FULL_SCALE_G = fondo scala dell'MPU6050 (±16 g).
+const THRUST_G = 2, MOVING_G = 0.3, FULL_SCALE_G = 15.5;
+
+function flightStats(head, rows) {
+  const col = p => head.findIndex(h => h.startsWith(p));
+  const iAcc = col('|acc|'), iAlt = col('quota');
+  // "in volo (1 = sì)"; nei primi lanci la colonna era "fase (0 terra 1 volo 2 atterrato)"
+  const iFly = col('in volo') >= 0 ? col('in volo') : col('fase');
+  if (iAcc < 0 || iFly < 0 || !rows.length) return null;
+  const n = rows.length, t = i => rows[i][0], a = i => rows[i][iAcc];
+  const flying = i => rows[i][iFly] === 1;
+
+  let flights = 0;
+  for (let i = 0; i < n; i++) if (flying(i) && (i === 0 || !flying(i - 1))) flights++;
+  const launch = rows.findIndex((r, i) => flying(i));
+  if (launch < 0) return {flights: 0};
+
+  // Il firmware dichiara il decollo dopo 30 ms di spinta: l'inizio vero è qualche campione prima
+  let start = launch;
+  while (start > 0 && a(start - 1) > THRUST_G) start--;
+  let end = launch;
+  while (end < n && flying(end)) end++;
+  const landed = end < n;
+  let impact = end - 1;
+  if (landed) while (impact > start && Math.abs(a(impact) - 1) <= MOVING_G) impact--;
+
+  let peak = start, burn = start, apo = -1;
+  for (let i = start; i <= impact; i++) if (a(i) > a(peak)) peak = i;
+  while (burn + 1 < n && a(burn + 1) > THRUST_G) burn++;
+  if (iAlt >= 0) {
+    for (let i = start; i <= impact; i++) {
+      if (!isNaN(rows[i][iAlt]) && (apo < 0 || rows[i][iAlt] > rows[apo][iAlt])) apo = i;
+    }
+  }
+  const t0 = t(start);
+  return {
+    flights, landed, launchT: t0,
+    burnS: (t(burn) - t0) / 1000,
+    peakG: a(peak), peakT: t(peak),
+    apogeeM: apo >= 0 ? rows[apo][iAlt] : null, apogeeT: apo >= 0 ? t(apo) : null,
+    impactT: landed ? t(impact) : null,
+    flightS: landed ? (t(impact) - t0) / 1000 : null,
+    descentMs: landed && apo >= 0 && t(impact) > t(apo) ? rows[apo][iAlt] / ((t(impact) - t(apo)) / 1000) : null,
+  };
+}
+
+function seekTo(t) {
+  Player.frames.length ? Player.seek(t) : Sensors.cursor(t);
+}
+
+function renderFlight(l, f) {
+  const box = $('#flightcard .fbody');
+  if (!box) return;
+  box.className = 'fbody';
+  if (!f) {
+    box.innerHTML = '<span class="mut">In questi dati non c\'è la colonna del volo: riepilogo non disponibile.</span>';
+    return;
+  }
+  if (!f.flights) {
+    box.innerHTML = '<span class="mut">Nessun decollo riconosciuto in questa registrazione.</span>';
+    return;
+  }
+  const s = ms => (ms / 1000).toFixed(2) + ' s';
+  const stat = (v, label, t) => t == null ? `<div class="stat"><b>${v}</b><span>${label}</span></div>`
+    : `<div class="stat click" onclick="seekTo(${t})" title="Vai a questo istante"><b>${v}</b><span>${label}</span></div>`;
+  const items = [
+    f.apogeeM != null ? stat(`${f.apogeeM.toFixed(1)} m`, `quota massima, a ${s(f.apogeeT - f.launchT)}`, f.apogeeT) : '',
+    stat(`${f.peakG.toFixed(1)} g`, `picco di accelerazione, a ${s(f.peakT - f.launchT)}`, f.peakT),
+    stat(`${f.burnS.toFixed(2)} s`, `spinta (|a| oltre ${THRUST_G} g)`, f.launchT),
+    stat(f.flightS != null ? `${f.flightS.toFixed(1)} s` : '–',
+      f.landed ? 'tempo di volo, fino all\'impatto' : 'volo non concluso nella registrazione', f.impactT),
+    f.descentMs != null ? stat(`${f.descentMs.toFixed(1)} m/s`, 'discesa media', null) : '',
+  ];
+  const notes = [];
+  const est = l.meta.altitude_m;
+  if (f.apogeeM != null && est) {
+    const d = f.apogeeM - est;
+    notes.push(`Quota stimata ${est} m: misurata ${d >= 0 ? '+' : ''}${d.toFixed(1)} m (${d >= 0 ? '+' : ''}${(d / est * 100).toFixed(0)}%).`);
+  }
+  if (f.peakG >= FULL_SCALE_G) notes.push('⚠ Il picco ha raggiunto il fondo scala del sensore (16 g): quello vero può essere più alto.');
+  if (f.flights > 1) notes.push(`La registrazione contiene ${f.flights} voli: il riepilogo è del primo.`);
+  box.innerHTML = `<div class="stats">${items.join('')}</div>` +
+    (notes.length ? `<div class="mut" style="margin-top:10px;font-size:13px">${notes.join('<br>')}</div>` : '') +
+    `<div class="mut" style="margin-top:8px;font-size:12px">Clic su un valore per vedere quell'istante nel video.</div>`;
+}
+
 // ---------- grafici sensori: sensors.csv, prima colonna = tempo (ms) ----------
 const Sensors = {
   series: [], xs: [], t: null,
+  events: [],  // istanti notevoli del volo, disegnati come linee verticali: {t, label}
 
   async load(l) {
     this.series = [];
+    this.events = [];
     try {
       const txt = await (await api(fileUrl(l.dir + '/sensors.csv'))).text();
       const lines = txt.trim().split(/\r?\n/);
       const head = lines[0].split(',').map(s => s.trim());
       const rows = lines.slice(1).map(r => r.split(',').map(Number)).filter(r => r.length === head.length && !isNaN(r[0]));
       this.xs = rows.map(r => r[0]);
+      const f = flightStats(head, rows);
+      l.flight = f;
+      renderFlight(l, f);
+      if (f?.flights) {
+        this.events = [{t: f.launchT, label: 'decollo'}, {t: f.apogeeT, label: 'apogeo'},
+          {t: f.impactT, label: 'impatto'}].filter(e => e.t != null);
+      }
       const box = $('#sensors');
       box.className = '';
       box.innerHTML = `<div class="mut">${rows.length} campioni · clic sul grafico per spostare il video a quell'istante</div>`;
@@ -919,6 +1033,7 @@ const Sensors = {
       this.drawAll();
     } catch (e) {
       $('#sensors').textContent = 'Impossibile leggere sensors.csv: ' + e.message;
+      renderFlight(l, null);
     }
   },
 
@@ -1003,6 +1118,19 @@ const Sensors = {
       const v = x0 + (x1 - x0) * i / 5;
       g.fillText((v / 1000).toFixed(1) + ' s', X(v), H - padB + 5);
     }
+
+    // Decollo, apogeo, impatto: linee tratteggiate sotto la curva
+    g.save();
+    g.setLineDash([4, 4]);
+    g.strokeStyle = mut;
+    g.textAlign = 'left'; g.textBaseline = 'top';
+    for (const e of this.events) {
+      if (e.t < x0 || e.t > x1) continue;
+      const x = X(e.t);
+      g.beginPath(); g.moveTo(x, padT); g.lineTo(x, padT + h); g.stroke();
+      g.fillText(e.label, x + 3, padT + h - 14);
+    }
+    g.restore();
 
     g.strokeStyle = acc;
     g.lineWidth = 1.6;

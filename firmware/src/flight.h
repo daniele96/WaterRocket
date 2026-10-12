@@ -64,6 +64,7 @@ State state();
 const char *stateName(State s);
 uint32_t launchMs();   // millis() del decollo (0 se mai partito)
 uint32_t landedMs();   // millis() dell'atterraggio (0 se non ancora atterrato)
+uint32_t launchCount();  // decolli dall'accensione: dice se c'è stato un volo in un intervallo
 
 Calibration calibration();
 void startPrecal();
@@ -74,7 +75,7 @@ void forceLaunch();
 void forceLand();
 void reset();
 
-// Modalità prova: soglia di decollo bassa (2 g per 10 ms), basta un colpo della mano.
+// Modalità prova: soglia di decollo bassa (1,5 g per 2 letture), basta alzare la scheda.
 // Spenta all'avvio: sul razzo vero un urto sulla rampa la farebbe scattare.
 void setTestMode(bool on);
 bool testMode();

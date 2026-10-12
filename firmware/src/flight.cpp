@@ -12,15 +12,17 @@
 
 // --- Soglie del riconoscimento delle fasi (da tarare con i primi lanci) ---
 // Decollo: la spinta di un razzo ad acqua supera largamente i 10 g; 2.5 g per
-// 30 ms bastano a escludere urti e maneggiamenti, e si ottengono anche con uno
-// scossone deciso a mano per provarlo a terra.
+// 4 letture di fila (30 ms) bastano a escludere urti e maneggiamenti. Si contano le
+// letture e non i millisecondi: tra due letture passano 9-11 ms (tempi del bus I2C) e
+// "almeno 10 ms" a volte mancava per 1 ms, così due letture buone non bastavano.
 static constexpr float LAUNCH_G = 2.5f;
-static constexpr uint32_t LAUNCH_MS = 30;
-// Modalità prova (dalla pagina web): basta un colpo secco della mano, che dà
-// picchi di 2-3 g lunghi solo 10-20 ms. Sul razzo vero farebbe scattare il
-// decollo anche con un urto sulla rampa, per questo all'avvio è sempre spenta.
-static constexpr float TEST_LAUNCH_G = 2.0f;
-static constexpr uint32_t TEST_LAUNCH_MS = 10;
+static constexpr uint32_t LAUNCH_SAMPLES = 4;
+// Modalità prova (dalla pagina web): basta alzare la scheda con decisione. Sul banco
+// un'alzata a mano dava 1,5-1,7 g, un colpo secco 3-6 g ma per 1-2 letture soltanto.
+// Sul razzo vero farebbe scattare il decollo anche maneggiandolo sulla rampa, per
+// questo all'avvio è sempre spenta.
+static constexpr float TEST_LAUNCH_G = 1.5f;
+static constexpr uint32_t TEST_LAUNCH_SAMPLES = 2;
 // Atterraggio: vettore accelerazione stabile entro LANDED_DELTA_G per LANDED_STILL_MS.
 // 0.1 g corrisponde a ~6° di inclinazione. Senza paracadute la discesa è balistica
 // (caduta libera ~0 g, rotolamenti) e finisce con l'impatto: poi resta fermo a 1 g.
@@ -83,6 +85,7 @@ static float s_apogee = 0;  // m, quota massima dall'ultimo decollo (protetta da
 static std::atomic<State> s_state = State::Ground;
 static std::atomic<uint32_t> s_launchMs = 0;
 static std::atomic<uint32_t> s_landedMs = 0;
+static std::atomic<uint32_t> s_launches = 0;  // decolli dall'accensione (veri o simulati)
 // Richieste dal loop() al task, che è l'unico a modificare la macchina a stati
 static std::atomic<bool> s_reqLaunch = false;
 static std::atomic<bool> s_reqReset = false;
@@ -227,6 +230,7 @@ static void enterState(State st, uint32_t now) {
     std::lock_guard<std::mutex> lock(s_mutex);
     s_peak = 0;
     s_apogee = 0;
+    s_launches++;
   } else if (st == State::Landed) {
     if (!s_launchMs) s_launchMs = now;  // atterraggio simulato senza decollo
     s_landedMs = now;
@@ -238,7 +242,7 @@ static void enterState(State st, uint32_t now) {
 }
 
 static void flightTask(void *) {
-  uint32_t aboveSince = 0;  // da quando |a| supera LAUNCH_G (0 = sotto soglia)
+  uint32_t aboveCount = 0;  // letture di fila con |a| oltre la soglia di decollo
   uint32_t stillSince = 0;  // da quando il razzo è fermo
   Sample ref = {};          // campione di riferimento della finestra "fermo"
   uint32_t readErrors = 0;
@@ -252,7 +256,7 @@ static void flightTask(void *) {
 
     if (s_reqReset.exchange(false)) {
       enterState(State::Ground, millis());
-      aboveSince = 0;
+      aboveCount = 0;
       p0Snap = true;  // dopo il recupero si è in un altro punto: la quota 0 non va trascinata
     }
     if (s_reqLaunch.exchange(false)) {
@@ -345,11 +349,9 @@ static void flightTask(void *) {
     switch (s_state.load()) {
       case State::Ground:
         if (g < (s_testMode ? TEST_LAUNCH_G : LAUNCH_G)) {
-          aboveSince = 0;
-        } else if (!aboveSince) {
-          aboveSince = s.ms;
-        } else if (s.ms - aboveSince >= (s_testMode ? TEST_LAUNCH_MS : LAUNCH_MS)) {
-          aboveSince = 0;
+          aboveCount = 0;
+        } else if (++aboveCount >= (s_testMode ? TEST_LAUNCH_SAMPLES : LAUNCH_SAMPLES)) {
+          aboveCount = 0;
           enterState(State::Flying, s.ms);
           stillSince = 0;
         }
@@ -585,6 +587,7 @@ const char *stateName(State s) {
 
 uint32_t launchMs() { return s_launchMs; }
 uint32_t landedMs() { return s_landedMs; }
+uint32_t launchCount() { return s_launches; }
 
 void forceLaunch() { s_reqLaunch = true; }
 void forceLand() { s_reqLand = true; }

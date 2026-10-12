@@ -47,6 +47,7 @@ static String sessionDir() {
   return s_sessionDir;
 }
 static time_t s_startEpoch = 0;
+static uint32_t s_launchesAtStart = 0;  // decolli contati all'avvio della registrazione
 
 static void printChipInfo() {
   Serial.println();
@@ -123,6 +124,7 @@ static void startRecording() {
     info.close();
   }
 
+  s_launchesAtStart = Flight::launchCount();
   // Prima i sensori: il loro tempo 0 coincide (a pochi ms) con quello del video
   const bool imu = Flight::startLog(s_sessionDir);
   const bool cam = CameraRec::start(s_sessionDir);
@@ -149,9 +151,13 @@ static void stopRecording() {
                 CameraRec::sensorName(), (unsigned long)frames, secs, fps, AudioRec::seconds());
     info.printf("errors_video=%lu\nerrors_audio=%lu\n", (unsigned long)CameraRec::errors(),
                 (unsigned long)AudioRec::errors());
-    info.printf("sensor_samples=%lu\nsensor_dropped=%lu\npeak_g=%.2f\n",
-                (unsigned long)Flight::loggedSamples(), (unsigned long)Flight::logDropped(),
-                Flight::peakG());
+    info.printf("sensor_samples=%lu\nsensor_dropped=%lu\n",
+                (unsigned long)Flight::loggedSamples(), (unsigned long)Flight::logDropped());
+    // Picco e apogeo valgono per l'ultimo decollo: si scrivono solo se è avvenuto durante
+    // questa registrazione, altrimenti sarebbero quelli di un volo precedente
+    const uint32_t flights = Flight::launchCount() - s_launchesAtStart;
+    info.printf("flights=%lu\n", (unsigned long)flights);
+    if (flights) info.printf("peak_g=%.2f\n", Flight::peakG());
     // Zero preso sulla rampa: con questi valori si risale ai dati grezzi
     const Flight::Calibration c = Flight::calibration();
     info.printf("cal_raw_g=%.4f\ncal_scale=%.4f\ncal_gyro_bias_dps=%.2f,%.2f,%.2f\n"
@@ -159,8 +165,8 @@ static void stopRecording() {
                 c.rawG, c.scale, c.gx, c.gy, c.gz, c.rx, c.ry, c.rz);
     if (Flight::hasBaro()) {
       // Il modello serve all'analisi: rumore e frequenza della quota cambiano fra i due
-      info.printf("baro=%s\napogee_m=%.2f\npad_pressure_hpa=%.2f\n", Baro::model(), Flight::apogeeM(),
-                  Flight::padPressureHpa());
+      info.printf("baro=%s\npad_pressure_hpa=%.2f\n", Baro::model(), Flight::padPressureHpa());
+      if (flights) info.printf("apogee_m=%.2f\n", Flight::apogeeM());
       if (!isnan(c.altNoiseM)) info.printf("pad_alt_noise_m=%.3f\n", c.altNoiseM);
     }
     info.close();
