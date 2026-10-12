@@ -420,6 +420,7 @@ l'anello lampeggia, manca il condensatore o l'anello è stato collegato al 3V3.
 - [ ] Foro del cicalino libero, adesivo protettivo rimosso
 - [ ] Slitta bloccata dai due perni, nastro sull'apertura USB, spugna sul BMP180,
       nessun filo in tensione
-- [ ] Dopo il recupero: fermare la registrazione **prima** di staccare la batteria
-      (oppure accettare di perdere l'ultimo secondo, vedi firmware)
+- [ ] La registrazione si ferma da sola **10 s dopo l'atterraggio**; cicalino e lampo
+      bianco continuano finché non premi **🔕 Spegni cicalino** nell'app (che riarma
+      anche il razzo per il lancio successivo). Stacca la batteria solo dopo
 - [ ] A fine giornata: **batteria staccata** e messa in carica

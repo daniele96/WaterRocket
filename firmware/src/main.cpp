@@ -357,12 +357,26 @@ static void handlePrecal() {
   }
 }
 
-// Modalità prova = registrazione automatica di ogni prova, come "Nuovo lancio" dalla pagina:
-// parte quando si attiva la modalità (o si riarma a terra), così il video comprende il
-// decollo, e si ferma TEST_REC_TAIL_MS dopo l'atterraggio. Le registrazioni avviate a mano
-// non vengono toccate.
+// Dopo l'atterraggio la registrazione si ferma da sola (la SD non si riempie mentre si cerca
+// il razzo): 10 s nei lanci veri, per avere anche i rimbalzi e i primi istanti a terra, 3 s
+// in modalità prova. Solo se il decollo è avvenuto durante questa registrazione: una
+// registrazione avviata a razzo già atterrato la decide chi l'ha avviata.
+// Cicalino e lampo dell'anello continuano finché non li si spegne dall'app.
+static constexpr uint32_t REC_TAIL_MS = 10000;
 static constexpr uint32_t TEST_REC_TAIL_MS = 3000;
 
+static void handleLandingStop() {
+  if (!isRecording() || Flight::state() != Flight::State::Landed) return;
+  if (Flight::launchCount() == s_launchesAtStart) return;  // nessun decollo in questa registrazione
+  const uint32_t tail = Flight::testMode() ? TEST_REC_TAIL_MS : REC_TAIL_MS;
+  if (millis() - Flight::landedMs() < tail) return;
+  Serial.printf(">> Registrazione fermata %lu s dopo l'atterraggio\n", (unsigned long)(tail / 1000));
+  stopRecording();
+}
+
+// Modalità prova = registrazione automatica di ogni prova, come "Nuovo lancio" dalla pagina:
+// parte quando si attiva la modalità (o si riarma a terra), così il video comprende il
+// decollo. Si ferma dopo l'atterraggio (handleLandingStop) o spegnendo la modalità.
 static void handleTestRecording() {
   static bool autoRec = false;  // registrazione in corso avviata da qui
   static bool lastTest = false;
@@ -379,10 +393,6 @@ static void handleTestRecording() {
     startRecording();
     autoRec = isRecording();
   } else if (autoRec && !test) {
-    stopRecording();
-    autoRec = false;
-  } else if (autoRec && state == Flight::State::Landed &&
-             millis() - Flight::landedMs() >= TEST_REC_TAIL_MS) {
     stopRecording();
     autoRec = false;
   }
@@ -463,6 +473,7 @@ void loop() {
   Web::handle();
   handleFlight();
   handleTestRecording();
+  handleLandingStop();
   handlePrecal();
   Buzzer::handle();
   LedRing::handle(ringLook());
