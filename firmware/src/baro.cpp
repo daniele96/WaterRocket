@@ -2,6 +2,8 @@
 
 #include <Wire.h>
 
+#include <algorithm>
+
 // Registri comuni ai due chip
 static constexpr uint8_t REG_ID = 0xD0;
 static constexpr uint8_t REG_RESET = 0xE0;  // scrivendo 0xB6 riparte come all'accensione
@@ -35,7 +37,11 @@ static constexpr uint32_t BMP180_TEMP_US = 4500, BMP180_PRESS_US = 7500;
 // La temperatura cambia lentamente: il datasheet consiglia di rileggerla una volta al
 // secondo. Quel giro non dà una pressione nuova e resta l'ultima.
 static constexpr uint32_t BMP180_TEMP_EVERY_MS = 1000;
-// Passa-basso sulla pressione, l'equivalente dell'IIR interno del BMP280: il rumore scende
+// Prima la mediana delle ultime BMP180_MEDIAN pressioni: scarta le letture sballate isolate
+// (sul banco se ne vedevano di 8-10 m, sempre verso il basso), che altrimenti passerebbero
+// in parte dal passa-basso e gonfierebbero l'apogeo. Costa ~20 ms di ritardo.
+static constexpr int BMP180_MEDIAN = 5;
+// Poi un passa-basso, l'equivalente dell'IIR interno del BMP280: il rumore scende
 // da ~0,4 a ~0,15 m con ~30 ms di ritardo. All'apogeo la velocità è ~0, il ritardo non conta.
 static constexpr float BMP180_IIR_ALPHA = 0.25f;
 
@@ -60,6 +66,8 @@ static uint32_t s_convStartUs = 0;
 static uint32_t s_tempMs = 0;                 // millis() dell'ultima temperatura avviata
 static int32_t s_b5 = 0;                      // dalla temperatura, serve alla pressione
 static float s_pressPa = NAN, s_tempC = NAN;  // ultimi valori (pressione già filtrata)
+static float s_window[BMP180_MEDIAN];         // ultime pressioni grezze, per la mediana
+static int s_windowN = 0, s_windowNext = 0;
 
 static bool writeReg(uint8_t reg, uint8_t value) {
   Wire.beginTransmission(s_addr);
@@ -185,7 +193,16 @@ static bool finishBmp180Press() {
   const int32_t up = ((d[0] << 16) | (d[1] << 8) | d[2]) >> (8 - BMP180_OSS);
   float p;
   if (!bmp180Press(up, s_b5, BMP180_OSS, p)) return false;
-  s_pressPa = isnan(s_pressPa) ? p : s_pressPa + (p - s_pressPa) * BMP180_IIR_ALPHA;
+
+  s_window[s_windowNext] = p;
+  s_windowNext = (s_windowNext + 1) % BMP180_MEDIAN;
+  if (s_windowN < BMP180_MEDIAN) s_windowN++;
+  float sorted[BMP180_MEDIAN];
+  memcpy(sorted, s_window, s_windowN * sizeof(float));
+  std::sort(sorted, sorted + s_windowN);
+  const float med = sorted[s_windowN / 2];
+
+  s_pressPa = isnan(s_pressPa) ? med : s_pressPa + (med - s_pressPa) * BMP180_IIR_ALPHA;
   return true;
 }
 
@@ -232,6 +249,7 @@ static bool beginBmp180() {
   // Prima misura completa a giri di 10 ms, come farà il task: temperatura, poi pressione
   s_conv = Conv::None;
   s_pressPa = s_tempC = NAN;
+  s_windowN = s_windowNext = 0;
   s_tempMs = millis() - BMP180_TEMP_EVERY_MS;
   for (int i = 0; i < 3; i++) {
     if (!stepBmp180()) {

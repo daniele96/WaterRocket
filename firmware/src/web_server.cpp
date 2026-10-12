@@ -112,13 +112,24 @@ static void handleStatus(AsyncWebServerRequest *req) {
              "{\"model\":\"%s\",\"alt\":%.2f,\"press\":%.2f,\"temp\":%.1f,\"apogee\":%.1f}",
              Baro::model(), a.altM, a.pressHpa, a.baroTempC, Flight::apogeeM());
   }
-  char sensors[320];
+  // Calibrazione pre-lancio: stato, avanzamento, età dell'ultima riuscita, rumore della quota
+  static const char *const PRECAL_NAMES[] = {"idle", "running", "ok", "fail"};
+  const Flight::PrecalStatus pc = Flight::precal();
+  char noise[16] = "null";
+  if (!isnan(cal.altNoiseM)) snprintf(noise, sizeof(noise), "%.3f", cal.altNoiseM);
+  char precal[200];
+  snprintf(precal, sizeof(precal),
+           "{\"state\":\"%s\",\"progress\":%u,\"age\":%ld,\"msg\":\"%s\",\"noise\":%s}",
+           PRECAL_NAMES[(int)pc.state], (unsigned)pc.progress,
+           pc.doneMs ? (long)((millis() - pc.doneMs) / 1000) : -1L, pc.msg, noise);
+  char sensors[520];
   snprintf(sensors, sizeof(sensors),
            "\"acc\":[%.2f,%.2f,%.2f],\"g\":%.2f,\"net\":%.2f,\"gyro\":[%.1f,%.1f,%.1f],"
-           "\"calAge\":%ld,\"calRawG\":%.3f,\"baro\":%s",
-           a.ax, a.ay, a.az, Flight::magnitude(a), a.net, a.gx, a.gy, a.gz, calAge, cal.rawG, baro);
+           "\"calAge\":%ld,\"calRawG\":%.3f,\"baro\":%s,\"precal\":%s",
+           a.ax, a.ay, a.az, Flight::magnitude(a), a.net, a.gx, a.gy, a.gz, calAge, cal.rawG, baro,
+           precal);
   const LedRing::Manual led = LedRing::manual();
-  char buf[1100];  // ~750 caratteri con tutti i campi
+  char buf[1400];  // ~900 caratteri con tutti i campi
   snprintf(buf, sizeof(buf),
            "{\"time\":%lld,\"staIp\":\"%s\",\"recording\":%s,\"dir\":\"%s\",\"secs\":%.1f,"
            "\"frames\":%lu,\"fps\":%.1f,\"audio\":%.1f,\"camera\":\"%s\",\"sd\":%s,"
@@ -476,6 +487,11 @@ bool begin(const RecorderHooks &hooks) {
     req->send(200, "text/plain", "ok");
   });
   // Soglia di decollo: è un flag atomico letto dal task del sensore, non serve passare dal loop()
+  // Calibrazione pre-lancio: la richiesta è un flag atomico raccolto dal task del sensore
+  s_server.on("/api/precal", HTTP_POST, [](AsyncWebServerRequest *req) {
+    Flight::startPrecal();
+    req->send(202, "text/plain", "ok");
+  });
   s_server.on("/api/testmode", HTTP_POST, [](AsyncWebServerRequest *req) {
     Flight::setTestMode(param(req, "on") == "1");
     req->send(200, "text/plain", "ok");

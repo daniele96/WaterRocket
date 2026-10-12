@@ -189,6 +189,10 @@ Il GY-521 ha 8 pin: `VCC GND SCL SDA XDA XCL AD0 INT`.
   altrimenti non sente la variazione di pressione. Il forellino sul coperchio
   metallico del chip va lasciato libero (spugna appoggiata, mai colla) e al buio:
   il BMP180 è **sensibile alla luce**, quindi niente vano in plastica trasparente.
+  Va anche **fissato senza forzature** (biadesivo o alloggiamento morbido, niente vite
+  che fletta il modulo): sul banco, maneggiando la breadboard, la quota saltava di
+  3–5 m per un secondo. Il firmware prende la quota 0 solo a razzo fermo, quindi
+  questi disturbi non entrano nella misura, ma in volo il sensore deve stare tranquillo.
 - La camera usa un suo bus (SCCB su GPIO39/40): **nessun conflitto** con questo I2C.
 
 Nel firmware il bus si apre con `Wire.begin(5, 6)` (sono anche i pin di default
@@ -305,6 +309,7 @@ Il consumo dipende solo dal firmware. Valori indicativi per 8 LED:
 |---|---|---|
 | Avvio / errore | rosso fisso = SD mancante o sensori non trovati | 3 beep lunghi |
 | Pronto | verde fisso, 10 % | — |
+| Calibrazione pre-lancio (3 s) | blu che respira | 2 beep corti = ok, 1 lungo = fallita |
 | Registrazione / armato | rosso pulsante | 1 beep corto all'avvio |
 | In volo (dalla spinta all'apogeo) | bianco 100 % | — |
 | Discesa | colore in base alla quota (didattica) | — |
@@ -372,6 +377,7 @@ XIAO fissati con una goccia di colla a caldo (scarico della trazione).
 | Tensione anello | multimetro tra VDD anello e GND | = tensione batteria |
 | Bus I2C | sketch di scansione (sotto) | dispositivi **0x68** e **0x77** (0x76 con un BMP280) |
 | Altimetro | comando `i` sulla seriale | `Altimetro: BMP180 ok (I2C 0x77)` |
+| Quota | dati in continuo (`a`): scheda dalla scrivania al pavimento e ritorno | gradino pari all'altezza del piano (73,5 cm misurati −0,71 m); a scheda ferma ±0,3 m |
 | Cicalino | `digitalWrite(2, HIGH)` | suono forte; corrente ≤ 35 mA |
 | Anello | rosso, verde, blu, bianco in sequenza | 8 LED, colori corretti |
 | Registrazione | `r` da seriale o pulsante BOOT | ~27 fps come prima del cablaggio |
@@ -407,6 +413,9 @@ l'anello lampeggia, manca il condensatore o l'anello è stato collegato al 3V3.
 - [ ] Polarità del pigtail verificata (batteria nuova? misurala)
 - [ ] Antenna innestata, nella sua sede sul fianco e coperta di nastro
 - [ ] Anello verde (pronto) → nessun errore di SD o sensori
+- [ ] Razzo sulla rampa, fermo: **📏 Calibra prima del lancio** dalla webapp (o `z`
+      da seriale). Non toccarlo per 3 s (anello blu), attendi i 2 beep corti e
+      "✅ calibrato" con quota entro ±0,5 m. Se passano più di 10 minuti, rifalla
 - [ ] Registrazione avviata (anello rosso pulsante, beep corto)
 - [ ] Foro del cicalino libero, adesivo protettivo rimosso
 - [ ] Slitta bloccata dai due perni, nastro sull'apertura USB, spugna sul BMP180,

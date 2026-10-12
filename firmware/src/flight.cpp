@@ -35,8 +35,15 @@ static constexpr uint32_t CAL_SAMPLES = 150;
 static constexpr float CAL_DELTA_G = 0.03f;
 static constexpr float CAL_GYRO_DPS = 3.0f;
 static constexpr float CAL_MIN_G = 0.7f, CAL_MAX_G = 1.4f;  // fuori = non è appoggiato fermo
-// Quota 0 sulla rampa: media mobile della pressione con costante di tempo ~2 s (10 ms / 2 s)
-static constexpr float PAD_P_ALPHA = 0.005f;
+// La stessa finestra dà la quota 0: media della pressione mentre è fermo. Così la quota si
+// azzera appena il razzo è appoggiato sulla rampa, e mai mentre lo si maneggia (in mano il
+// BMP180 sul banco mostrava gobbe di 3-5 m: deformazione del modulo, mano vicino al foro).
+// Calibrazione pre-lancio: stessa cosa su una finestra più lunga, entro un tempo massimo.
+static constexpr uint32_t PRECAL_SAMPLES = 300;     // 3 s
+static constexpr uint32_t PRECAL_TIMEOUT_MS = 15000;
+// Metri di quota per Pa vicino alla pressione di riferimento: derivata della formula
+// barometrica, 44330 * 0,190295 / p0 (circa 1 m ogni 12 Pa al livello del mare)
+static constexpr double M_PER_PA_X_P0 = 44330.0 * 0.190295;
 
 static constexpr uint32_t SAMPLE_PERIOD_MS = 10;  // 100 Hz
 // 100 kHz: con fili volanti e i pull-up del modulo i 400 kHz davano errori.
@@ -82,6 +89,11 @@ static std::atomic<bool> s_reqReset = false;
 static std::atomic<bool> s_reqLand = false;
 static std::atomic<bool> s_testMode = false;
 static Calibration s_cal;  // protetta da s_mutex
+static std::atomic<bool> s_reqPrecal = false;
+static std::atomic<Precal> s_precalState = Precal::Idle;
+static std::atomic<uint8_t> s_precalProgress = 0;
+static std::atomic<uint32_t> s_precalDoneMs = 0;
+static std::atomic<const char *> s_precalMsg = "";
 
 struct LogRecord {
   Sample s;
@@ -156,12 +168,14 @@ static Sample calibrated(const Sample &raw, const Calibration &c) {
 struct CalWindow {
   Sample first = {};
   double ax = 0, ay = 0, az = 0, gx = 0, gy = 0, gz = 0;
-  uint32_t n = 0;
+  double p = 0, p2 = 0;  // pressione (Pa): somma e somma dei quadrati, per media e rumore
+  uint32_t n = 0, np = 0;
 
-  void restart() { n = 0; ax = ay = az = gx = gy = gz = 0; }
+  void restart() { n = np = 0; ax = ay = az = gx = gy = gz = p = p2 = 0; }
 
-  // true quando la finestra è completa e ha prodotto una nuova calibrazione in out
-  bool add(const Sample &r, Calibration &out) {
+  // true quando la finestra ha raggiunto target campioni e ha prodotto una nuova
+  // calibrazione in out. pressPa = NAN se l'altimetro non c'è o la lettura è persa.
+  bool add(const Sample &r, float pressPa, uint32_t target, Calibration &out) {
     const float g = magnitude(r);
     if (n > 0) {
       const float dx = r.ax - first.ax, dy = r.ay - first.ay, dz = r.az - first.az;
@@ -178,7 +192,12 @@ struct CalWindow {
     if (n == 0) first = r;
     ax += r.ax; ay += r.ay; az += r.az;
     gx += r.gx; gy += r.gy; gz += r.gz;
-    if (++n < CAL_SAMPLES) return false;
+    if (!isnan(pressPa)) {
+      p += pressPa;
+      p2 += (double)pressPa * pressPa;
+      np++;
+    }
+    if (++n < target) return false;
 
     const float mx = ax / n, my = ay / n, mz = az / n;
     const float rawG = sqrtf(mx * mx + my * my + mz * mz);
@@ -188,6 +207,14 @@ struct CalWindow {
     out.rawG = rawG;
     out.tempC = r.tempC;
     out.ms = r.ms;
+    out.p0Pa = 0;
+    out.altNoiseM = NAN;
+    if (np >= n / 2) {  // abbastanza letture dell'altimetro nella finestra
+      const double mean = p / np;
+      const double var = std::max(0.0, p2 / np - mean * mean);
+      out.p0Pa = mean;
+      out.altNoiseM = sqrt(var) * M_PER_PA_X_P0 / mean;
+    }
     restart();
     return true;
   }
@@ -216,7 +243,8 @@ static void flightTask(void *) {
   Sample ref = {};          // campione di riferimento della finestra "fermo"
   uint32_t readErrors = 0;
   CalWindow calWin;
-  bool p0Snap = true;  // prossima lettura dell'altimetro = nuova quota 0
+  bool p0Snap = true;  // prossima lettura dell'altimetro = quota 0 provvisoria
+  uint32_t precalStart = 0;
 
   TickType_t wake = xTaskGetTickCount();
   for (;;) {
@@ -239,11 +267,6 @@ static void flightTask(void *) {
       continue;
     }
 
-    // Lo zero si prende solo sulla rampa: in volo e dopo l'atterraggio resta quello del decollo
-    Calibration newCal;
-    const bool calDone = s_state == State::Ground && calWin.add(raw, newCal);
-    if (s_state != State::Ground) calWin.restart();
-
     // Altimetro: stesso bus, stesso task, letto a ogni giro (100 Hz). Il BMP280 aggiorna da
     // solo a ~44 Hz e tra due misure il valore si ripete; il BMP180 misura a comando e qui
     // fa un passo (legge la conversione precedente e avvia la successiva): pressione nuova a
@@ -251,16 +274,57 @@ static void flightTask(void *) {
     float press = NAN, baroT = NAN;
     const bool baroOk = s_hasBaro && Baro::read(press, baroT);
 
+    // Calibrazione pre-lancio chiesta dall'utente: la finestra riparte e deve durare 3 s
+    if (s_reqPrecal.exchange(false)) {
+      if (s_state != State::Ground) {
+        s_precalMsg = "si calibra solo a terra, prima del decollo";
+        s_precalState = Precal::Failed;
+      } else {
+        calWin.restart();
+        precalStart = millis();
+        s_precalProgress = 0;
+        s_precalMsg = "tieni fermo il razzo";
+        s_precalState = Precal::Running;
+      }
+    }
+    const bool precalRunning = s_precalState == Precal::Running;
+
+    // Lo zero si prende solo sulla rampa: in volo e dopo l'atterraggio resta quello del decollo
+    Calibration newCal;
+    const uint32_t target = precalRunning ? PRECAL_SAMPLES : CAL_SAMPLES;
+    const bool calDone = s_state == State::Ground && calWin.add(raw, baroOk ? press : NAN, target, newCal);
+    if (s_state != State::Ground) calWin.restart();
+
+    if (precalRunning) {
+      if (calDone) {
+        s_precalProgress = 100;
+        s_precalDoneMs = millis();
+        s_precalMsg = "";
+        s_precalState = Precal::Ok;
+      } else if (s_state != State::Ground) {
+        s_precalMsg = "decollo durante la calibrazione";
+        s_precalState = Precal::Failed;
+      } else if (millis() - precalStart > PRECAL_TIMEOUT_MS) {
+        s_precalMsg = "troppo movimento: appoggia il razzo e non toccarlo per 3 secondi";
+        s_precalState = Precal::Failed;
+      } else {
+        s_precalProgress = calWin.n * 100 / PRECAL_SAMPLES;
+      }
+    }
+
     Sample s;
     {
       std::lock_guard<std::mutex> lock(s_mutex);
-      if (calDone) s_cal = newCal;
+      if (calDone) {
+        s_cal = newCal;
+        if (newCal.p0Pa > 0) s_p0 = newCal.p0Pa;  // quota 0 = pressione media da fermo
+      }
       s = calibrated(raw, s_cal);
       if (baroOk) {
-        // Quota 0 = pressione della rampa: a terra segue il meteo con una media lenta,
-        // dal decollo resta bloccata. Al riarmo riparte dalla pressione del momento.
-        if (s_state == State::Ground) {
-          s_p0 = (s_p0 > 0 && !p0Snap) ? s_p0 + (press - s_p0) * PAD_P_ALPHA : press;
+        // Prima del primo zero (all'avvio) e dopo il riarmo si parte dalla pressione del
+        // momento, poi la prima finestra di immobilità la rende precisa. Dal decollo è bloccata.
+        if (s_state == State::Ground && (s_p0 <= 0 || p0Snap)) {
+          s_p0 = press;
           p0Snap = false;
         }
         s.pressHpa = press / 100.0f;
@@ -525,6 +589,12 @@ uint32_t landedMs() { return s_landedMs; }
 void forceLaunch() { s_reqLaunch = true; }
 void forceLand() { s_reqLand = true; }
 void reset() { s_reqReset = true; }
+
+void startPrecal() { s_reqPrecal = true; }
+
+PrecalStatus precal() {
+  return {s_precalState, s_precalProgress, s_precalDoneMs, s_precalMsg};
+}
 
 Calibration calibration() {
   std::lock_guard<std::mutex> lock(s_mutex);

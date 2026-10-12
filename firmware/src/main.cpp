@@ -89,6 +89,7 @@ static void printHelp() {
   Serial.println("         a = dati accelerometro in continuo (on/off)");
   Serial.println("         v = simula il decollo, q = riarma a terra e zittisci il cicalino");
   Serial.println("         p = test del pin D3 dell'anello (10 s alto, 10 s basso)");
+  Serial.println("         z = calibrazione pre-lancio (razzo fermo sulla rampa per 3 s)");
   Serial.println("Pulsante BOOT: avvia/ferma registrazione");
 }
 
@@ -160,6 +161,7 @@ static void stopRecording() {
       // Il modello serve all'analisi: rumore e frequenza della quota cambiano fra i due
       info.printf("baro=%s\napogee_m=%.2f\npad_pressure_hpa=%.2f\n", Baro::model(), Flight::apogeeM(),
                   Flight::padPressureHpa());
+      if (!isnan(c.altNoiseM)) info.printf("pad_alt_noise_m=%.3f\n", c.altNoiseM);
     }
     info.close();
   }
@@ -262,6 +264,7 @@ static void handleSerial() {
       case 'p': case 'P':
         LedRing::pinTest();
         break;
+      case 'z': case 'Z': Flight::startPrecal(); break;
       case 'F':
         Serial.println("ATTENZIONE: se la SD non è FAT (es. exFAT) verrà formattata e");
         Serial.println("tutti i dati andranno persi. Invia 'Y' (maiuscola) entro 15 s per confermare.");
@@ -324,6 +327,30 @@ static void handleFlight() {
   }
 }
 
+// Esito della calibrazione pre-lancio: sul seriale e col cicalino, che sul campo si sente
+// anche con il telefono in tasca (2 beep corti = ok, 1 lungo = fallita)
+static void handlePrecal() {
+  static Flight::Precal last = Flight::Precal::Idle;
+  const Flight::PrecalStatus p = Flight::precal();
+  if (p.state == last) return;
+  last = p.state;
+
+  if (p.state == Flight::Precal::Ok) {
+    const Flight::Calibration c = Flight::calibration();
+    Serial.printf(">> CALIBRATO: accelerometro a riposo %.3f g (corretto a 1,000)", c.rawG);
+    if (!isnan(c.altNoiseM)) {
+      Serial.printf(", quota 0 a %.2f hPa, rumore ±%.2f m", c.p0Pa / 100.0f, c.altNoiseM);
+    }
+    Serial.println();
+    Buzzer::beep(80, 120, 2);
+  } else if (p.state == Flight::Precal::Failed) {
+    Serial.printf(">> CALIBRAZIONE FALLITA: %s\n", p.msg);
+    Buzzer::beep(600, 0, 1);
+  } else if (p.state == Flight::Precal::Running) {
+    Serial.println(">> Calibrazione pre-lancio: tieni fermo il razzo per 3 s");
+  }
+}
+
 // Modalità prova = registrazione automatica di ogni prova, come "Nuovo lancio" dalla pagina:
 // parte quando si attiva la modalità (o si riarma a terra), così il video comprende il
 // decollo, e si ferma TEST_REC_TAIL_MS dopo l'atterraggio. Le registrazioni avviate a mano
@@ -359,7 +386,7 @@ static void handleTestRecording() {
 
 // Aspetto dell'anello secondo la situazione (cablaggio.md §7), dal più importante:
 // manuale dal pannello > errore > atterrato > in volo > registrazione > pronto
-static constexpr uint32_t RED = 0xFF0000, GREEN = 0x00FF00, WHITE = 0xFFFFFF;
+static constexpr uint32_t RED = 0xFF0000, GREEN = 0x00FF00, BLUE = 0x0040FF, WHITE = 0xFFFFFF;
 // In modalità prova si è quasi sempre sull'USB: il bianco al 100% (~480 mA)
 // supererebbe la porta del PC e farebbe riavviare la scheda
 static constexpr uint8_t TEST_MAX_PCT = 25;
@@ -376,6 +403,8 @@ static LedRing::Look ringLook() {
     l = {Effect::Flash, WHITE, 100, Flight::landedMs()};  // in sincrono col cicalino
   } else if (Flight::state() == Flight::State::Flying) {
     l = {Effect::Solid, WHITE, 100, 0};
+  } else if (Flight::precal().state == Flight::Precal::Running) {
+    l = {Effect::Pulse, BLUE, 20, 0};  // calibrazione pre-lancio: non toccare il razzo
   } else if (isRecording()) {
     l = {Effect::Pulse, RED, 20, 0};
   } else {
@@ -428,6 +457,7 @@ void loop() {
   Web::handle();
   handleFlight();
   handleTestRecording();
+  handlePrecal();
   Buzzer::handle();
   LedRing::handle(ringLook());
 

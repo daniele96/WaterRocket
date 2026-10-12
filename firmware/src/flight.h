@@ -22,9 +22,10 @@ struct Sample {
   uint32_t ms;       // millis() della lettura
 };
 
-// Zero preso in automatico sulla rampa: media di 1.5 s di immobilità mentre è A TERRA.
-// Corregge la scala dell'accelerometro (a riposo |a| = 1 g), lo scarto del giroscopio
-// (a riposo 0 °/s) e memorizza la direzione della gravità per l'accelerazione netta.
+// Zero preso in automatico sulla rampa: media di 1.5 s di immobilità mentre è A TERRA
+// (3 s con la calibrazione pre-lancio). Corregge la scala dell'accelerometro (a riposo
+// |a| = 1 g), lo scarto del giroscopio (a riposo 0 °/s), memorizza la direzione della
+// gravità per l'accelerazione netta e la pressione che diventa la quota 0.
 // L'accelerazione netta vale rispetto all'orientamento sulla rampa.
 struct Calibration {
   float scale = 1.0f;          // fattore per l'accelerometro
@@ -32,7 +33,19 @@ struct Calibration {
   float rx = 0, ry = 0, rz = 0;  // direzione della gravità a riposo (vettore unitario)
   float rawG = 0;              // |a| grezzo a riposo (0 = zero non ancora preso)
   float tempC = 0;
+  float p0Pa = 0;              // pressione media a riposo = quota 0 (0 = senza altimetro)
+  float altNoiseM = NAN;       // rumore della quota nella finestra (deviazione standard, m)
   uint32_t ms = 0;             // millis() della presa dello zero
+};
+
+// Calibrazione pre-lancio chiesta dall'utente (pannello o comando 'z'): come lo zero
+// automatico ma su 3 s di immobilità, con esito e qualità da mostrare prima di lanciare.
+enum class Precal : uint8_t { Idle, Running, Ok, Failed };
+struct PrecalStatus {
+  Precal state;
+  uint8_t progress;  // 0-100 mentre è in corso
+  uint32_t doneMs;   // millis() della fine (0 = mai fatta)
+  const char *msg;   // motivo del fallimento o indicazione mentre è in corso
 };
 
 // Inizializza I2C e sensore e avvia il task di lettura. false se l'MPU6050 non risponde.
@@ -53,6 +66,8 @@ uint32_t launchMs();   // millis() del decollo (0 se mai partito)
 uint32_t landedMs();   // millis() dell'atterraggio (0 se non ancora atterrato)
 
 Calibration calibration();
+void startPrecal();
+PrecalStatus precal();
 
 // Per le prove a terra: simula decollo e atterraggio / torna ad A_TERRA (riarma).
 void forceLaunch();

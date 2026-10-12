@@ -306,6 +306,8 @@ function renderHome() {
     <div class="row between" style="margin-bottom:14px">
       <h2>Lanci <span class="mut">(${L.length})</span></h2>
       <div class="row">
+        <span id="precalinfo" class="mut" style="font-size:13px">${precalText(S.status)}</span>
+        <button id="precalbtn" class="pri" onclick="startPrecal()" title="Con il razzo fermo sulla rampa: 3 s per azzerare quota e accelerometro">📏 Calibra prima del lancio</button>
         <button onclick="toggleSim()">🧪 Pannello prova</button>
         <button onclick="togglePreview()">📷 Anteprima camera</button>
         <button onclick="exportTable()" ${L.length ? '' : 'disabled'}>⬇ Tabella lanci (CSV)</button>
@@ -410,7 +412,56 @@ function updateLed(s) {
   }
 }
 
+// ---------- calibrazione pre-lancio: zero di quota e accelerometro con il razzo sulla rampa ----------
+const PRECAL_OLD_S = 600;   // dopo 10 minuti meteo e temperatura possono aver spostato lo zero
+const PRECAL_NOISY_M = 0.5; // oltre, la quota è troppo agitata (vento sul sensore, colpi)
+let precalTimer = 0;
+
+function precalText(s) {
+  const p = s?.precal;
+  if (!p) return '';
+  if (p.state === 'running') return `⏳ calibrazione ${p.progress}%: ${p.msg}`;
+  if (p.state === 'fail') return `❌ ${p.msg}`;
+  if (p.state !== 'ok') return 'Calibrazione pre-lancio non ancora fatta';
+  const age = p.age < 90 ? `${p.age} s fa` : `${Math.round(p.age / 60)} min fa`;
+  const noise = p.noise == null ? '' : ` · quota ±${p.noise.toFixed(2)} m`;
+  const warn = p.age > PRECAL_OLD_S ? ' ⚠ conviene rifarla'
+    : p.noise != null && p.noise > PRECAL_NOISY_M ? ' ⚠ quota rumorosa: ripara il sensore dal vento' : '';
+  return `✅ calibrato ${age}${noise}${warn}`;
+}
+
+async function startPrecal() {
+  try {
+    await api('/api/precal', {method: 'POST'});
+    toast('Calibrazione: lascia il razzo fermo per 3 secondi');
+  } catch (e) {
+    return toast('Errore: ' + e.message);
+  }
+  // Durante la calibrazione lo stato si aggiorna ogni 0,5 s, poi si torna al ritmo normale
+  clearInterval(precalTimer);
+  precalTimer = setInterval(async () => {
+    await pollStatus();
+    if (S.status?.precal?.state !== 'running') {
+      clearInterval(precalTimer);
+      const p = S.status?.precal;
+      if (p?.state === 'ok') toast('✅ Calibrato, pronto al lancio');
+      if (p?.state === 'fail') toast('❌ Calibrazione fallita: ' + p.msg);
+    }
+  }, 500);
+}
+
+function updatePrecal(s) {
+  const el = $('#precalinfo');
+  if (!el) return;
+  el.textContent = precalText(s);
+  const b = $('#precalbtn');
+  b.disabled = s.precal?.state === 'running' || s.phase !== 0;
+  b.title = s.phase !== 0 ? 'Si calibra solo a terra, prima del decollo'
+    : 'Con il razzo fermo sulla rampa: 3 s per azzerare quota e accelerometro';
+}
+
 function updateSim(s) {
+  updatePrecal(s);
   updateLed(s);
   const box = $('#simdata');
   if (!box) return;
