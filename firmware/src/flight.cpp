@@ -518,7 +518,31 @@ static bool initSensor() {
   return true;
 }
 
+// Un reset a caldo (USB, crash) che arriva a metà di una lettura lascia il sensore a metà
+// byte, con SDA tenuto basso: il primo tentativo falliva circa una volta su cinque.
+// 9 impulsi di clock gli fanno finire il byte, poi uno STOP libera il bus.
+static void clearBus() {
+  pinMode(I2C_PIN_SDA, INPUT_PULLUP);
+  pinMode(I2C_PIN_SCL, OUTPUT_OPEN_DRAIN);
+  digitalWrite(I2C_PIN_SCL, HIGH);
+  for (int i = 0; i < 9; i++) {
+    delayMicroseconds(5);
+    digitalWrite(I2C_PIN_SCL, LOW);
+    delayMicroseconds(5);
+    digitalWrite(I2C_PIN_SCL, HIGH);
+  }
+  // STOP: SDA sale mentre SCL è alto
+  pinMode(I2C_PIN_SDA, OUTPUT_OPEN_DRAIN);
+  digitalWrite(I2C_PIN_SDA, LOW);
+  delayMicroseconds(5);
+  digitalWrite(I2C_PIN_SDA, HIGH);
+  delayMicroseconds(5);
+  pinMode(I2C_PIN_SDA, INPUT);
+  pinMode(I2C_PIN_SCL, INPUT);
+}
+
 bool begin() {
+  clearBus();
   Wire.begin(I2C_PIN_SDA, I2C_PIN_SCL, I2C_FREQ);
 
   bool ok = false;

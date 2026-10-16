@@ -14,6 +14,7 @@
 
 #include <Arduino.h>
 #include <SD.h>
+#include <esp_system.h>
 
 #include <mutex>
 
@@ -49,12 +50,42 @@ static String sessionDir() {
 static time_t s_startEpoch = 0;
 static uint32_t s_launchesAtStart = 0;  // decolli contati all'avvio della registrazione
 
+// Motivo dell'ultimo avvio: resta valido fino al reset successivo, quindi con 'i' si
+// scopre anche a distanza di tempo perché la scheda si è riavviata da sola
+static const char *resetReasonName(esp_reset_reason_t r) {
+  switch (r) {
+    case ESP_RST_POWERON:   return "accensione";
+    case ESP_RST_EXT:       return "pin di reset";
+    case ESP_RST_SW:        return "riavvio dal firmware";
+    case ESP_RST_PANIC:     return "CRASH (eccezione o abort)";
+    case ESP_RST_INT_WDT:   return "CRASH (watchdog degli interrupt)";
+    case ESP_RST_TASK_WDT:  return "CRASH (watchdog dei task)";
+    case ESP_RST_WDT:       return "CRASH (watchdog)";
+    case ESP_RST_DEEPSLEEP: return "risveglio da deep sleep";
+    case ESP_RST_BROWNOUT:  return "BROWNOUT (tensione scesa troppo)";
+    case ESP_RST_USB:       return "reset dall'USB (dopo il flash, o un programma del PC sulla porta)";
+    case ESP_RST_JTAG:      return "reset dal JTAG";
+    default:                return nullptr;
+  }
+}
+
+static void printResetReason() {
+  const esp_reset_reason_t r = esp_reset_reason();
+  const char *name = resetReasonName(r);
+  if (name) {
+    Serial.printf("Avvio:     %s, acceso da %lu s\n", name, (unsigned long)(millis() / 1000));
+  } else {
+    Serial.printf("Avvio:     motivo %d, acceso da %lu s\n", (int)r, (unsigned long)(millis() / 1000));
+  }
+}
+
 static void printChipInfo() {
   Serial.println();
   Serial.println("=== Water Rocket - XIAO ESP32S3 Sense ===");
   Serial.printf("Chip:      %s rev %d, %d core @ %lu MHz\n",
                 ESP.getChipModel(), ESP.getChipRevision(),
                 ESP.getChipCores(), (unsigned long)ESP.getCpuFreqMHz());
+  printResetReason();
   Serial.printf("Flash:     %lu KB\n", (unsigned long)(ESP.getFlashChipSize() / 1024));
   Serial.printf("Heap:      %lu KB liberi\n", (unsigned long)(ESP.getFreeHeap() / 1024));
   if (psramFound()) {
