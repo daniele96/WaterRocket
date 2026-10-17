@@ -584,14 +584,15 @@ l'ogiva prima o poi si rompe o si perde.
 **Antenna 2.4 GHz — non serve comprarla**
 
 Seeed la spedisce **nella scatola**: va estratta e innestata sul connettore U.FL
-(premere prima da un lato, poi dall'altro — si rompe se spinta storta). Con l'antenna
+(premere prima da un lato, poi dall'altro — si rompe se spinta storta). Sulla Sense il
+connettore sta sotto la scheda della camera: si innesta con la Sense tolta. Con l'antenna
 montata Seeed dichiara 100 m+, ben oltre i ~50–70 m di quota del razzo. Riga azzerata:
 −6 €.
 
 - ⚠️ Verificare nelle foto dell'inserzione AliExpress che le antenne siano incluse. Se
   non ci sono, ~3 €/pz ([Seeed](https://www.seeedstudio.com/2-4GHz-2-81dBi-Antenna-for-XIAO-ESP32C3-p-5475.html)
   o [Amazon](https://www.amazon.it/s?k=antenna+IPEX+UFL+2.4GHz)).
-- In volo sta incollata **fuori sul fianco del pod elettronica**, nella sua sede, lontana
+- In volo sta incollata **fuori sulla faccia della camera del pod elettronica**, accanto all'obiettivo, lontana
   dalla LiPo (che è nel pod opposto): la busta metallizzata scherma.
 
 **Batteria LiPo 602040 400 mAh — verificata ✅**

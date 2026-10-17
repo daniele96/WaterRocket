@@ -4,7 +4,7 @@
 // Due pod a 180° sulla bottiglia, tenuti da due giri di elastico:
 //   - pod elettronica: XIAO ESP32-S3 Sense con la camera inclinata verso
 //     l'ugello, MPU6050 e BMP180 sul tetto, cicalino sul fianco, anello LED
-//     fuori sul tetto, antenna fuori sul fianco opposto
+//     fuori sul tetto, antenna fuori sulla faccia della camera, accanto all'obiettivo
 //   - pod batteria: LiPo 602040, stessa sagoma esterna (resistenza simmetrica)
 //   - slitta: piastrina su cui si monta la XIAO, si infila nel pod e si
 //     blocca con due spezzoni di filamento da 1,75 infilati da fuori
@@ -24,7 +24,7 @@
 
 /* [Cosa generare] */
 // assieme = vista d'insieme; le altre parti escono già orientate per la stampa
-parte = "assieme"; // [assieme, spaccato, spaccato_batteria, pod_elettronica, pod_batteria, slitta, stampa_tutto]
+parte = "assieme"; // [assieme, spaccato, spaccato_antenna, spaccato_batteria, pod_elettronica, pod_batteria, slitta, stampa_tutto]
 mostra_componenti = true;
 // Porta la vista sul pezzo a ogni anteprima (F5); toglila per ruotare liberamente
 inquadratura_automatica = true;
@@ -33,13 +33,13 @@ verifica = "nessuna"; // [nessuna, componenti, estrazione_slitta, batteria, quot
 
 /* [Bottiglia] */
 // Parte dritta: circonferenza misurata / 3,1416
-diametro_bottiglia = 104;
+diametro_bottiglia = 65;
 // Striscia di gomma incollata sotto i bordi (camera d'aria di bici); 0 = niente
 spessore_gomma = 0.8;
 
 /* [Elastico] */
 elastico_larghezza = 20;
-elastico_spessore = 1.2;
+elastico_spessore = 2;
 // Gioco dell'elastico nelle finestre
 gioco_elastico = 0.8;
 // Parete sotto la finestra su cui preme l'elastico
@@ -60,9 +60,17 @@ raggio_spigoli = 2;
 angolo_muso = 45; // [45:5:75]
 
 /* [Antenna] */
-// Antenna FPC Seeed: va fuori sul fianco, in una sede da 0,4 mm, coperta da nastro trasparente
-antenna_lunghezza = 39;
-antenna_altezza = 19;
+// Antenna FPC Seeed: fuori sulla faccia della camera, accanto all'obiettivo, in una sede
+// da 0,4 mm, col lato saldato contro la faccia e la saldatura in basso; sopra il nastro.
+// Se serve il tetto si alza da solo per farla stare.
+antenna_lunghezza = 37;
+antenna_larghezza = 17;
+// Centro della saldatura del cavetto, guardando l'antenna dal lato saldato con la
+// saldatura in basso: distanza dal bordo corto in basso e dal bordo lungo di destra
+antenna_attacco = 13.7;
+antenna_attacco_lato = 10.5;
+// Cavetto, dallo spinotto alla saldatura
+antenna_cavo = 30;
 
 /* [Batteria] */
 batteria_lunghezza = 42;  // compresa la protezione (PCM)
@@ -150,7 +158,33 @@ SLED_BOXES = [[SL_U0, SL_U1, SL_V0, SL_V1, SL_W0, SL_W1],
               [SL_U0, SL_U1, SL_V0, SL_V1, SL_W1, LIP_H]];
 STACK_PTS = [for (b = concat(XIAO_BOXES, SLED_BOXES)) for (c = corners(b)) bp(c)];
 
-H_IN = max([for (p = STACK_PTS) p.z]) + 0.6;  // soffitto interno
+// Antenna fuori sulla faccia della camera, lungo la pendenza, fra il fianco Y- e
+// l'obiettivo (coordinate della scheda: la faccia esterna è a w = W_FACCIA)
+W_FACCIA = parete + quota_faccia;
+function u_faccia(z) = (z - O.z - W_FACCIA * ct) / st;
+ANT_V0 = -W / 2 + 0.7 - Y_V0;              // bordo verso il fianco Y-
+ANT_V1 = ANT_V0 + antenna_larghezza;      // bordo verso l'obiettivo
+// Il fondo della faccia segue la bottiglia: è più alto vicino al centro del pod
+ANT_U0 = u_faccia(-R + sqrt(pow(R + spessore_gomma, 2) - pow(Y_V0 + ANT_V1 + 0.3, 2))) + 0.8;
+ANT_U1 = ANT_U0 + antenna_lunghezza;
+H_ANT = O.z + W_FACCIA * ct + (ANT_U1 + 0.8) * st;  // tetto che serve all'antenna
+// Fessura del cavetto sotto la saldatura, aperta verso la bottiglia: il cavetto entra
+// ed esce di lato, perché l'U.FL della XIAO sta sotto la scheda Sense e da montata non
+// si stacca
+FESSURA = 3.5;
+U_FES = ANT_U0 + antenna_attacco + 1.0;
+V_FES = ANT_V1 - antenna_attacco_lato;
+// Spinotto U.FL (dal modello Seeed) e percorso del cavetto: esce dal lato lungo della
+// scheda verso la bottiglia, sale verso la faccia ed entra nella fessura da dentro
+UFL = [2.61, 5.71, 0.22, 3.22, 1.25, 3.65];
+CAVO_PTS = [for (c = [[4.16, 1.72, 3.0], [-0.8, 1.5, 3.0], [-3, (1.5 + V_FES) / 2, 8],
+                      [ANT_U0 + antenna_attacco + 0.5, V_FES, quota_faccia - 0.6],
+                      [ANT_U0 + antenna_attacco, V_FES, W_FACCIA - 0.6]]) bp(c)];
+CAVO_MIN = sum_len(CAVO_PTS, 0);
+function sum_len(p, i) = i >= len(p) - 1 ? 0 : norm(p[i + 1] - p[i]) + sum_len(p, i + 1);
+
+H_STACK = max([for (p = STACK_PTS) p.z]) + 0.6;
+H_IN = max(H_STACK, H_ANT - parete);           // soffitto interno
 H = H_IN + parete;                            // tetto esterno
 
 // Facce inclinate: posteriore (camera) e muso
@@ -177,6 +211,10 @@ MPU_Y1 = Wi / 2 - 0.6;
 MPU_Y0 = MPU_Y1 - MPU_WD;
 BMP_X0 = MPU_X0;
 BMP_Y0 = -Wi / 2 + 0.6;
+// Fori di fissaggio dei moduli (dalle foto, Ø ~3 mm): le colonnine con le viti ci stanno sopra
+FORO_MODULI = 3.2;
+MPU_FORI = [for (y = [MPU_Y0 + 2.6, MPU_Y0 + 2.6 + 15.25]) [MPU_X0 + MPU_L - 2.3, y]];
+BMP_FORO = [BMP_X0 + BMP_L - 2.4, BMP_Y0 + 2.3];
 
 // Cicalino sul fianco Y+, sotto l'MPU e davanti alla slitta
 BZ_D = 12.4; BZ_CUP = 4.4; BZ_OUT = BZ_D + 2.4;
@@ -185,10 +223,6 @@ X_BZ = max(MPU_X0 + BZ_OUT / 2, SLED_X_MAX + 1.0 + BZ_OUT / 2);
 Z_BZ = H_IN - MPU_DOWN - 1.0 - BZ_OUT / 2;
 VENTS = [for (dx = [0, 3.5], dz = [-3, 3]) [X_BZ + BZ_OUT / 2 + 2.5 + dx, Z_BZ + dz]];
 
-// Antenna fuori sul fianco Y-
-Z_A0 = Z_WIN1 + 1.0;
-Z_A1 = Z_A0 + antenna_altezza;
-X_A0 = xa(Z_A1) + 1.0;
 
 // Batteria
 Z_ROOF = elastico_spessore + batteria_spessore - 0.4;  // l'elastico la spinge contro le mensole
@@ -198,7 +232,6 @@ BATT_SPAN = batteria_lunghezza + spazio_connettori;
 X_NB = max([
   MPU_X0 + MPU_L + 0.8 + parete / sin(angolo_muso) + H_IN * cot_m,
   X_BZ + BZ_OUT / 2 + 0.8 + parete / sin(angolo_muso) + (Z_BZ + BZ_OUT / 2) * cot_m,
-  X_A0 + antenna_lunghezza + 1.0 + Z_A1 * cot_m,
   X_RING + RING_D / 2 + 0.5 + H * cot_m,
   VENTS[3][0] + 2 + parete / sin(angolo_muso) + VENTS[3][1] * cot_m,
   xai(Z_ROOF) + BATT_SPAN + 2 * 1.6 + 1.0 + parete / sin(angolo_muso) + Z_ROOF * cot_m,
@@ -216,7 +249,11 @@ X_B1 = X_B0 + batteria_lunghezza;
 echo(str("Pod: lunghezza ", X_NB - xa(zb(W / 2)), " mm, larghezza ", W, " mm, altezza ", H,
          " mm (+3,2 anello LED). Elastici a X = ", BELTS[0], " e ", BELTS[1]));
 echo(str("Perni della slitta: spezzoni di filamento lunghi ", W / 2 + Wi / 2 + 0.7, " mm"));
-if (Z_A1 > H - raggio_spigoli - 0.3) echo("ATTENZIONE: l'antenna sborda sullo spigolo del tetto");
+echo(str("Cavetto dell'antenna: il percorso è di ", round(CAVO_MIN), " mm su ", antenna_cavo,
+         ", il resto fa un'ansa sotto la scheda"));
+if (H_ANT - parete > H_STACK) echo(str("Tetto alzato di ", H_ANT - parete - H_STACK, " mm per far stare l'antenna sulla faccia"));
+if (CAVO_MIN > antenna_cavo - 5) echo("ATTENZIONE: il cavetto dell'antenna resta teso");
+if (ANT_V1 + 0.3 > CAM_V - diametro_foro_obiettivo / 2 - 0.5) echo("ATTENZIONE: l'antenna arriva sul foro dell'obiettivo");
 
 // ---------------------------------------------------------------------
 // Guscio
@@ -288,12 +325,12 @@ module colonna(x, y, z0, d, foro) {
 module interni_elettronica() {
   // MPU6050: due viti sul lato dei fori, due appoggi sul lato dei pin (verso la XIAO)
   zm = H_IN - MPU_SO;
-  for (y = [MPU_Y0 + 2.6, MPU_Y0 + 2.6 + 15.25]) colonna(MPU_X0 + MPU_L - 2.3, y, zm, 5, true);
+  for (f = MPU_FORI) colonna(f.x, f.y, zm, 5, true);
   for (y = [MPU_Y0 + 4, MPU_Y1 - 4]) colonna(MPU_X0 + 4.5, y, zm, 3.5, false);
   // BMP180 col dorso liscio contro gli appoggi e il sensore verso la bottiglia
   // (va coperto con un pezzetto di spugna: dal fondo trasparente entra luce)
   zb_ = H_IN - BMP_SO;
-  colonna(BMP_X0 + BMP_L - 2.4, BMP_Y0 + 2.3, zb_, 4.5, true);
+  colonna(BMP_FORO.x, BMP_FORO.y, zb_, 4.5, true);
   colonna(BMP_X0 + 3.5, BMP_Y0 + BMP_WD / 2, zb_, 3, false);
   // Coppa del cicalino sul fianco Y+
   translate([X_BZ, Wi / 2 + 0.5, Z_BZ]) rotate([90, 0, 0])
@@ -321,10 +358,12 @@ module fori_elettronica() {
   translate([X_BZ, Wi / 2 - 1, Z_BZ]) rotate([-90, 0, 0]) cylinder(d = 3, h = parete + 3);
   // Sfiati laterali per il barometro (pressione statica)
   for (v = VENTS) translate([v[0], Wi / 2 - 1, v[1]]) rotate([-90, 0, 0]) cylinder(d = 1.5, h = parete + 3, $fn = 16);
-  // Sede dell'antenna fuori sul fianco Y- e foro del cavetto al centro
-  translate([X_A0 - 0.3, -W / 2 - 1, Z_A0 - 0.3]) cube([antenna_lunghezza + 0.6, 1.4, antenna_altezza + 0.6]);
-  translate([X_A0 + antenna_lunghezza / 2, -W / 2 - 1, Z_A0 + antenna_altezza / 2])
-    rotate([-90, 0, 0]) cylinder(d = 3, h = parete + 3);
+  // Sede dell'antenna sulla faccia della camera e fessura del cavetto, aperta in basso
+  in_scheda() {
+    box([ANT_U0 - 0.3, ANT_U1 + 0.3, ANT_V0 - 0.3, ANT_V1 + 0.3, W_FACCIA - 0.4, W_FACCIA + 1]);
+    translate([U_FES, V_FES, quota_faccia - 1]) cylinder(d = FESSURA, h = parete + 2, $fn = 24);
+    box([U_FES - 40, U_FES, V_FES - FESSURA / 2, V_FES + FESSURA / 2, quota_faccia - 1, W_FACCIA + 1]);
+  }
 }
 
 module slitta() {
@@ -374,18 +413,28 @@ module fori_batteria() {}
 // ---------------------------------------------------------------------
 // Componenti (solo per la vista d'insieme e i controlli)
 // ---------------------------------------------------------------------
-module xiao() {
-  for (b = XIAO_BOXES) box(b);
+// Scheda principale (con USB-C) e scheda Sense con la camera, separate per l'animazione
+// di montaggio: l'antenna si innesta con la Sense tolta
+module xiao_base() for (i = [0 : 2]) box(XIAO_BOXES[i]);
+module xiao_sense() {
+  for (i = [3 : len(XIAO_BOXES) - 1]) box(XIAO_BOXES[i]);
   for (l = LENS) translate([CAM_U, CAM_V, l[1]]) cylinder(d = l[0], h = l[2] - l[1]);
 }
+module xiao() { xiao_base(); xiao_sense(); }
 
-module sensori() {
-  zm = H_IN - MPU_SO;
-  translate([MPU_X0, MPU_Y0, zm - 1.6 - 1.5]) cube([MPU_L, MPU_WD, 1.6 + 1.5 - 0.05]);
-  translate([BMP_X0, BMP_Y0, H_IN - BMP_SO - 1.6]) cube([BMP_L, BMP_WD, 1.6 - 0.05]);
-  translate([BMP_X0 + 8, BMP_Y0 + 5, H_IN - BMP_SO - 2.6]) cube([4, 4, 1]);
-  translate([X_BZ, Wi / 2 - 0.05, Z_BZ]) rotate([90, 0, 0]) cylinder(d = 12, h = 9.6);
+module mpu6050() difference() {
+  translate([MPU_X0, MPU_Y0, H_IN - MPU_SO - 1.6 - 1.5]) cube([MPU_L, MPU_WD, 1.6 + 1.5 - 0.05]);
+  for (f = MPU_FORI) translate([f.x, f.y, H_IN - MPU_SO - 4]) cylinder(d = FORO_MODULI, h = 5, $fn = 24);
 }
+module bmp180() difference() {
+  union() {
+    translate([BMP_X0, BMP_Y0, H_IN - BMP_SO - 1.6]) cube([BMP_L, BMP_WD, 1.6 - 0.05]);
+    translate([BMP_X0 + 8, BMP_Y0 + 5, H_IN - BMP_SO - 2.6]) cube([4, 4, 1]);
+  }
+  translate([BMP_FORO.x, BMP_FORO.y, H_IN - BMP_SO - 3]) cylinder(d = FORO_MODULI, h = 4, $fn = 24);
+}
+module cicalino() translate([X_BZ, Wi / 2 - 0.05, Z_BZ]) rotate([90, 0, 0]) cylinder(d = 12, h = 9.6);
+module sensori() { mpu6050(); bmp180(); cicalino(); }
 
 module perni() in_scheda() for (pu = PIN_U)
   translate([pu, -Wi / 2 - 0.7 - Y_V0, W_PIN]) rotate([-90, 0, 0]) cylinder(r = R_PIN, h = W / 2 + Wi / 2 + 0.7, $fn = 24);
@@ -393,20 +442,32 @@ module perni() in_scheda() for (pu = PIN_U)
 module anello() translate([X_RING, 0, H + 0.05]) difference() {
   cylinder(d = RING_D, h = 1.6);
   translate([0, 0, -1]) cylinder(d = 18, h = 4);
+  // fori dei rivetti, sopra quelli del tetto
+  for (s = [-1, 1])
+    translate([s * 14 * cos(angolo_fori_anello), s * 14 * sin(angolo_fori_anello), -1]) cylinder(d = foro_rivetto, h = 4, $fn = 24);
 }
 
-module antenna() translate([X_A0, -W / 2 + 0.15, Z_A0]) cube([antenna_lunghezza, 0.2, antenna_altezza]);
+module antenna() in_scheda() translate([ANT_U0, ANT_V0, W_FACCIA - 0.25]) cube([antenna_lunghezza, antenna_larghezza, 0.2]);
+
+module cavetto() {
+  in_scheda() box(UFL);
+  for (i = [0 : len(CAVO_PTS) - 2]) hull() {
+    translate(CAVO_PTS[i]) sphere(d = 1.13, $fn = 12);
+    translate(CAVO_PTS[i + 1]) sphere(d = 1.13, $fn = 12);
+  }
+}
 
 module batteria() translate([X_B0, -batteria_larghezza / 2, Z_ROOF - batteria_spessore])
   cube([batteria_lunghezza, batteria_larghezza, batteria_spessore]);
 
-module componenti_elettronica() {
+module componenti_elettronica(alfa_antenna = 1) {
   color("dimgray") in_scheda() xiao();
   color("gold") in_scheda() slitta();
   color("royalblue") sensori();
   color("white") perni();
   color("black") anello();
-  color("peru") antenna();
+  color("black") cavetto();
+  color("peru", alfa_antenna) antenna();  // per ultima: se è trasparente non copre il cavetto
 }
 
 // ---------------------------------------------------------------------
@@ -437,9 +498,10 @@ if (verifica == "componenti") {
   // Componenti montati contro il pod: deve risultare vuoto
   intersection() {
     pod("elettronica");
-    union() { in_scheda() { xiao(); slitta(); } sensori(); antenna(); }
+    union() { in_scheda() { xiao(); slitta(); } sensori(); antenna(); cavetto(); }
   }
   intersection() { in_scheda() xiao(); in_scheda() slitta(); }
+  intersection() { cavetto(); in_scheda() { xiao(); slitta(); } }
 } else if (verifica == "estrazione_slitta") {
   // La slitta con la XIAO esce staccandosi di 3 mm dalla faccia e scivolando
   // parallela ad essa verso il basso: il percorso non deve toccare nulla.
@@ -463,6 +525,14 @@ if (verifica == "componenti") {
   }
   componenti_elettronica();
   %translate([-30, 0, -R]) rotate([0, 90, 0]) cylinder(r = R, h = X_NB + 60, $fn = 120);
+} else if (parte == "spaccato_antenna") {
+  // Pod elettronica senza il fianco Y-, visto da quel lato: percorso del cavetto
+  // (l'antenna è disegnata trasparente al suo posto)
+  color("orange") difference() {
+    pod("elettronica");
+    translate([-50, -W - Wi / 2 + 0.4, -50]) cube([X_NB + 100, W, 100]);
+  }
+  componenti_elettronica(0.35);
 } else if (parte == "spaccato_batteria") {
   color("orange") difference() {
     pod("batteria");
@@ -483,13 +553,14 @@ if (verifica == "componenti") {
 }
 
 if (verifica == "quote") echo(str("Z_O=", Z_O, " O.x=", O.x, " H_IN=", H_IN, " X_RING=", X_RING, " MPU_X0=", MPU_X0,
-  " X_BZ=", X_BZ, " Z_BZ=", Z_BZ, " X_A0=", X_A0, " Z_A0=", Z_A0, " X_NB=", X_NB, " X_B0=", X_B0,
+  " X_BZ=", X_BZ, " Z_BZ=", Z_BZ, " ANT_U0=", ANT_U0, " V_FES=", V_FES, " H_STACK=", H_STACK, " X_NB=", X_NB, " X_B0=", X_B0,
   " Z_ROOF=", Z_ROOF, " lente=", bp([CAM_U, CAM_V, 13.96]), " finestre=", BELTS));
 
 // Inquadratura della finestra di OpenSCAD: [punto guardato, rotazione, distanza]
 VISTE = [
   ["assieme",           [42, 0, 10], [62, 0, 328], 380],
   ["spaccato",          [44, 0, 10], [72, 0, 205], 175],
+  ["spaccato_antenna",  [42, 0, 10], [75, 0, 15],  170],
   ["spaccato_batteria", [44, 0, 8],  [72, 0, 205], 175],
   ["slitta",            [9, 8, 2],   [45, 0, 25],  90],
 ];

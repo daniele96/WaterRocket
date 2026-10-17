@@ -1,0 +1,451 @@
+<!doctype html>
+<!-- Modello della pagina: montaggio.py ci inserisce i pezzi e scrive montaggio.html -->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Montaggio cintura</title>
+<style>
+  :root {
+    --bg: #f4f3ef; --pannello: #ffffff; --testo: #1d1d1f; --tenue: #6b6b70;
+    --accento: #d98200; --accento-testo: #ffffff; --linea: #e4e1da;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17181a; --pannello: #202225; --testo: #ececee; --tenue: #9a9aa0;
+      --accento: #f5a524; --accento-testo: #1d1d1f; --linea: #303237;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--testo);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .app { display: grid; grid-template-columns: 1fr minmax(300px, 380px); height: 100vh; }
+  aside { background: var(--pannello); border-left: 1px solid var(--linea);
+    display: flex; flex-direction: column; min-height: 0; }
+  header { padding: 18px 20px 10px; }
+  h1 { font-size: 18px; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: var(--tenue); font-size: 13px; }
+  ol { list-style: none; margin: 0; padding: 4px 10px 10px; overflow: auto; flex: 1; }
+  li button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+  li button:hover { background: color-mix(in srgb, var(--testo) 6%, transparent); }
+  li button:focus-visible { outline: 2px solid var(--accento); }
+  li .n { flex: 0 0 24px; height: 24px; border-radius: 12px; display: grid; place-items: center;
+    font-size: 12px; font-weight: 600; background: var(--linea); }
+  li button.fatto .n { background: color-mix(in srgb, var(--accento) 35%, var(--linea)); }
+  li button.attivo { background: color-mix(in srgb, var(--accento) 14%, transparent); font-weight: 600; }
+  li button.attivo .n { background: var(--accento); color: var(--accento-testo); }
+  .descr { padding: 14px 20px 18px; border-top: 1px solid var(--linea); }
+  .descr h2 { font-size: 16px; margin: 0 0 6px; }
+  .descr p { margin: 0 0 6px; }
+  .nota { color: var(--tenue); font-size: 13px; }
+  .comandi { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .comandi button { font: inherit; padding: 7px 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--linea); background: var(--bg); color: var(--testo); }
+  .comandi button.primario { background: var(--accento); border-color: var(--accento); color: var(--accento-testo); }
+  .comandi button[aria-pressed="true"] { border-color: var(--accento); }
+  main { position: relative; min-width: 0; min-height: 0; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .aiuto { position: absolute; right: 16px; top: 12px; color: var(--tenue); font-size: 12px; }
+  .barra { position: absolute; left: 16px; right: 16px; bottom: 14px; height: 4px; border-radius: 2px;
+    background: color-mix(in srgb, var(--testo) 12%, transparent); }
+  .barra div { height: 100%; width: 0; border-radius: 2px; background: var(--accento); }
+  .avviso { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px;
+    text-align: center; color: var(--tenue); }
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: 52vh auto; height: auto; }
+    main { order: -1; height: 52vh; }
+    aside { border-left: 0; border-top: 1px solid var(--linea); }
+    ol { max-height: 38vh; }
+    .aiuto { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <main id="vista">
+    <canvas id="tela"></canvas>
+    <div class="aiuto">Trascina per ruotare · rotellina per lo zoom · tasto destro per spostare</div>
+    <div class="barra"><div id="avanzamento"></div></div>
+    <div class="avviso" id="avviso">Caricamento… Se resta così, serve la connessione a internet:
+      la pagina scarica la libreria 3D (three.js).</div>
+  </main>
+  <aside>
+    <header>
+      <h1>Montaggio della cintura</h1>
+      <div class="sub">Razzo ad acqua · pod elettronica e pod batteria</div>
+    </header>
+    <ol id="passi"></ol>
+    <section class="descr">
+      <h2 id="titolo"></h2>
+      <div id="testo"></div>
+      <div class="comandi">
+        <button id="indietro" title="Passo precedente (←)" aria-label="Passo precedente">◀</button>
+        <button id="rivedi" title="Rivedi il passo (spazio)">↻ Rivedi</button>
+        <button id="avanti" class="primario" title="Passo successivo (→)">Avanti ▶</button>
+        <button id="tutto" aria-pressed="false" title="Tutti i passi di fila">Riproduci tutto</button>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const DATI = /*DATI*/null;
+
+const PASSI = [
+  { titolo: 'Panoramica',
+    testo: `<p>La cintura montata: pod elettronica sopra, pod batteria dalla parte opposta,
+      tenuti da due elastici. <strong>Avanti ▶</strong> mostra un passo alla volta.</p>
+      <p class="nota">Le saldature si fanno tutte prima, al banco, collaudando dopo ogni filo
+      (cablaggio.md §8). Unica eccezione: i fili dell'anello LED vanno infilati nel foro del
+      tetto prima di saldarli alla XIAO.</p>` },
+  { titolo: 'Antenna sulla XIAO',
+    testo: `<p>Il connettore U.FL è sotto la scheda della camera: togli la scheda Sense, innesta
+      lo spinotto (prima da un lato, poi dall'altro) con il cavetto verso il lato dei pin
+      D0–D6, poi rimetti la Sense.</p>` },
+  { titolo: 'XIAO sulla slitta',
+    testo: `<p>La scheda appoggia sui quattro distanziali d'angolo, dentro i bordini. Sotto, nei
+      2,2 mm di spazio, passano i fili della batteria. Una goccia di colla a caldo la tiene ferma.</p>` },
+  { titolo: 'Slitta nel pod',
+    testo: `<p>Dal fondo aperto, facendola scorrere parallela alla faccia inclinata, poi contro la
+      faccia finché l'obiettivo entra nel foro. Il cavetto dell'antenna scorre nella fessura
+      della faccia; l'antenna resta fuori.</p>` },
+  { titolo: 'Perni',
+    testo: `<p>Dal fianco con l'apertura USB, due spezzoni di filamento da 1,75 mm lunghi 35 mm:
+      passano dietro la slitta, nelle sue gole, e finiscono nei fori ciechi dell'altro fianco.</p>
+      <p class="nota">Non si stampano: si tagliano dalla bobina col tronchesino e si smussano le
+      punte. In volo li tiene il nastro dell'apertura USB; niente colla.</p>` },
+  { titolo: 'MPU6050',
+    testo: `<p>Sul soffitto, con due viti sul lato dei fori: lato dei pin verso la XIAO,
+      componenti verso la bottiglia. Va fissato rigido.</p>` },
+  { titolo: 'BMP180',
+    testo: `<p>Sul soffitto accanto, dorso liscio contro gli appoggi, una vite. Coprilo con un
+      pezzetto di spugna: dal fondo trasparente entra luce.</p>` },
+  { titolo: 'Cicalino',
+    testo: `<p>Nella coppa sul fianco, col foro del suono contro il foro della parete e
+      <strong>senza</strong> l'adesivo "remove seal". Una goccia di colla.</p>` },
+  { titolo: 'Anello LED',
+    testo: `<p>Sul tetto: i due fori dell'anello sui due fori del tetto, filamento ribattuto col
+      saldatore (o viti M2). I fili scendono dal foro centrale, che poi si chiude con una goccia
+      di colla a caldo.</p>` },
+  { titolo: 'Antenna sulla faccia',
+    testo: `<p>Il cavetto entra nella fessura dal basso e sale fino in cima. L'antenna va col lato
+      saldato contro la faccia e la saldatura in basso. Sopra il nastro trasparente, senza
+      coprire l'obiettivo.</p>` },
+  { titolo: 'Batteria',
+    testo: `<p>Nel pod batteria la cella entra dal fondo, con la protezione (PCM) e i fili verso il
+      muso, cioè verso l'ogiva. Una volta sulla bottiglia l'elastico la spinge contro le mensole.</p>` },
+  { titolo: 'Sulla bottiglia',
+    testo: `<p>I due pod uno di fronte all'altro, subito sotto l'ogiva e in mezzo fra due alette,
+      con il muso verso l'ogiva. Due elastici passano nelle finestre dei fianchi; il cavo della
+      batteria corre sotto l'elastico anteriore.</p>
+      <p class="nota">Prima del volo: nastro sull'apertura USB e sulle teste dei perni, spugna sul BMP180, antenna coperta.</p>` },
+];
+
+// Inquadratura di ogni passo: pezzi da far stare nella vista, direzione (gradi) e zoom
+const VISTE = [
+  { pezzi: 'tutto', az: -125, el: 22, zoom: 0.95 },
+  { pezzi: ['xiao_base', 'xiao_sense', 'cavo'], az: -118, el: 32, zoom: 1.35 },
+  { pezzi: ['xiao_base', 'xiao_sense', 'slitta'], az: -118, el: 32, zoom: 1.3 },
+  { pezzi: ['pod_el', 'slitta'], az: -100, el: 8, zoom: 0.95 },
+  { pezzi: ['pod_el', 'perni'], az: 60, el: 22, zoom: 0.95 },
+  { pezzi: ['pod_el', 'mpu'], az: -65, el: -42, zoom: 0.95 },
+  { pezzi: ['pod_el', 'bmp'], az: -100, el: -42, zoom: 0.95 },
+  { pezzi: ['pod_el', 'cicalino'], az: -95, el: -30, zoom: 0.95 },
+  { pezzi: ['pod_el', 'anello'], az: -135, el: 45, zoom: 0.95 },
+  { pezzi: ['pod_el', 'antenna'], az: 195, el: 33, zoom: 0.95 },
+  { pezzi: ['pod_bat', 'batteria'], az: -65, el: -40, zoom: 0.95 },
+  { pezzi: 'tutto', az: -125, el: 22, zoom: 0.95 },
+];
+
+const DURATA = 3.0;   // secondi per passo
+const ATTESA = 0.6;   // l'animazione parte quando la vista è arrivata
+
+const avviso = document.getElementById('avviso');
+if (!DATI) {
+  avviso.innerHTML = `<p>Questo è solo il modello della pagina, senza i pezzi 3D.<br>
+    Apri <a href="montaggio.html">montaggio.html</a>, che si genera con <code>python montaggio.py</code>.</p>`;
+  throw new Error('montaggio_modello.html non contiene i pezzi: apri montaggio.html');
+}
+avviso.remove();
+
+const V = THREE.Vector3;
+const vista = document.getElementById('vista');
+const tela = document.getElementById('tela');
+
+const renderer = new THREE.WebGLRenderer({ canvas: tela, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const scena = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, 1, 1, 5000);
+camera.up.set(0, 0, 1);
+const controlli = new OrbitControls(camera, tela);
+controlli.enableDamping = true;
+controlli.autoRotateSpeed = 0.8;
+
+scena.add(new THREE.HemisphereLight(0xffffff, 0x8c8c8c, 1.7));
+const sole = new THREE.DirectionalLight(0xffffff, 2.2);
+sole.position.set(-90, -140, 220);
+scena.add(sole);
+const riflesso = new THREE.DirectionalLight(0xffffff, 0.7);
+riflesso.position.set(140, 90, -80);
+scena.add(riflesso);
+
+function sfondo() {
+  scena.background = new THREE.Color(getComputedStyle(document.body).getPropertyValue('--bg').trim());
+}
+sfondo();
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sfondo);
+
+// --- Pezzi ---------------------------------------------------------------
+function decodifica(testo, Tipo) {
+  const bin = atob(testo);
+  const byte = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) byte[i] = bin.charCodeAt(i);
+  return new Tipo(byte.buffer);
+}
+
+const { R, E: e, D: d, bottiglia: [bx0, bx1] } = DATI.dati;
+const E = new V(...e), D = new V(...d);
+const gruppi = { el: new THREE.Group(), bat: new THREE.Group(), mondo: new THREE.Group() };
+Object.values(gruppi).forEach(g => scena.add(g));
+
+const pezzi = {};
+for (const [nome, p] of Object.entries(DATI.pezzi)) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(decodifica(p.pos, Float32Array), 3));
+  geo.setIndex(new THREE.BufferAttribute(decodifica(p.idx, Uint32Array), 1));
+  geo.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({ color: p.col, roughness: 0.55, metalness: 0.05, flatShading: true });
+  const m = new THREE.Mesh(geo, mat);
+  if (nome.startsWith('pod_')) {
+    const spigoli = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25),
+      new THREE.LineBasicMaterial({ color: 0x7a4a00, transparent: true, opacity: 0.45 }));
+    m.add(spigoli);
+    m.userData.spigoli = spigoli;
+  }
+  gruppi[p.gruppo].add(m);
+  pezzi[nome] = m;
+}
+
+const geoBottiglia = new THREE.CylinderGeometry(R, R, bx1 - bx0, 96, 1, true);
+geoBottiglia.rotateZ(-Math.PI / 2);   // asse lungo X, come nel modello
+const bottiglia = new THREE.Mesh(geoBottiglia, new THREE.MeshStandardMaterial({
+  color: 0x9fd3ff, transparent: true, opacity: 0.22, roughness: 0.2, side: THREE.DoubleSide, depthWrite: false }));
+bottiglia.position.x = (bx0 + bx1) / 2;
+gruppi.mondo.add(bottiglia);
+
+// --- Movimenti (spostamenti dalla posizione montata, riferimento del pod) ---
+const O0 = new V();
+const S = E.clone().multiplyScalar(-55).addScaledVector(D, -3);   // slitta fuori dal fondo
+const P = S.clone().addScaledVector(D, 16);                         // XIAO sopra la slitta
+const P12 = P.clone().addScaledVector(D, 12);                       // scheda Sense sollevata
+const D3 = D.clone().multiplyScalar(-3);
+const v = (x, y, z) => new V(x, y, z);
+const dentro = [[2, .15, 1, P, S], [3, 0, .5, S, D3], [3, .5, 1, D3, O0]];
+
+// da = passo in cui il pezzo compare; seg = [passo, t0, t1, da, a]
+const TEMPI = {
+  xiao_base:  { da: 1, seg: [[1, 0, 1, P, P], ...dentro] },
+  xiao_sense: { da: 1, seg: [[1, .05, .35, P, P12], [1, .7, 1, P12, P], ...dentro] },
+  cavo:       { da: 1, dopo: .35, seg: [[1, .35, .65, P.clone().add(v(0, -25, 0)), P], ...dentro] },
+  slitta:     { da: 2, seg: [[2, 0, 1, S, S], [3, 0, .5, S, D3], [3, .5, 1, D3, O0]] },
+  perni:      { da: 4, seg: [[4, .1, 1, v(0, 40, 0), O0]] },
+  mpu:        { da: 5, seg: [[5, .1, 1, v(0, 0, -30), O0]] },
+  bmp:        { da: 6, seg: [[6, .1, 1, v(0, 0, -30), O0]] },
+  cicalino:   { da: 7, seg: [[7, .05, .55, v(0, -14, -28), v(0, -14, 0)], [7, .6, 1, v(0, -14, 0), O0]] },
+  anello:     { da: 8, seg: [[8, .1, 1, v(0, 0, 25), O0]] },
+  antenna:    { da: 9, seg: [[9, .1, 1, D.clone().multiplyScalar(25), O0]] },
+  batteria:   { da: 10, seg: [[10, .1, 1, v(0, 0, -30), O0]] },
+};
+
+const limita = x => Math.min(1, Math.max(0, x));
+const morbido = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+
+function spostamento(nome, passo, t) {
+  const segmenti = TEMPI[nome].seg;
+  let pos = segmenti[0][3];
+  for (const [p, t0, t1, da, a] of segmenti) {
+    if (p < passo || (p === passo && t >= t1)) pos = a;
+    else if (p === passo && t > t0) return da.clone().lerp(a, morbido((t - t0) / (t1 - t0)));
+    else break;
+  }
+  return pos.clone();
+}
+
+function opacita(m, a) {
+  const trasparente = a < 0.999;
+  if (m.material.transparent !== trasparente) {
+    m.material.transparent = trasparente;
+    m.material.depthWrite = !trasparente;
+    m.material.needsUpdate = true;
+  }
+  m.material.opacity = a;
+  if (m.userData.spigoli) m.userData.spigoli.material.opacity = 0.45 * Math.max(a, 0.5);
+}
+
+const ULTIMO = PASSI.length - 1;
+const Rx180 = new THREE.Quaternion().setFromAxisAngle(new V(1, 0, 0), Math.PI);
+
+function applica(passo, t) {
+  const tutto = passo === 0;
+  const { el, bat } = gruppi;
+  el.visible = passo !== 10;
+  el.position.set(0, 0, R);
+  bat.visible = tutto || passo >= 10;
+  bat.position.set(0, 0, -R);
+  bat.quaternion.copy(Rx180);
+  if (passo === 10) { bat.position.set(0, 0, R); bat.quaternion.identity(); }
+  if (passo === ULTIMO) {
+    el.position.z = R + 45 * (1 - morbido(limita(t / .45)));
+    bat.position.z = -R - 45 * (1 - morbido(limita((t - .2) / .45)));
+  }
+  bottiglia.visible = tutto || passo === ULTIMO;
+  const el_t = tutto ? 1 : passo === ULTIMO ? limita((t - .62) / .3) : 0;
+  pezzi.elastico.visible = el_t > 0;
+  opacita(pezzi.elastico, el_t);
+
+  for (const [nome, m] of Object.entries(pezzi)) {
+    const tempi = TEMPI[nome];
+    if (!tempi) continue;
+    if (tutto) { m.visible = true; m.position.set(0, 0, 0); continue; }
+    m.visible = passo > tempi.da || (passo === tempi.da && t >= (tempi.dopo || 0));
+    m.position.copy(spostamento(nome, passo, t));
+  }
+  opacita(pezzi.pod_el, tutto || passo === 9 || passo === ULTIMO ? 1 : passo <= 2 ? 0.12 : 0.3);
+  opacita(pezzi.pod_bat, tutto || passo === ULTIMO ? 1 : 0.32);
+}
+
+// --- Vista ---------------------------------------------------------------
+function scatola(passo, nomi) {
+  const box = new THREE.Box3();
+  for (const t of [0, .2, .4, .6, .8, 1]) {
+    applica(passo, t);
+    scena.updateMatrixWorld(true);
+    for (const n of nomi) if (pezzi[n].visible && pezzi[n].parent.visible) box.expandByObject(pezzi[n]);
+  }
+  return box;
+}
+
+let camDa = null, camA = null, camT = 1;
+function inquadra(passo) {
+  const vi = VISTE[passo];
+  const nomi = vi.pezzi === 'tutto' ? Object.keys(pezzi) : vi.pezzi;
+  const sfera = scatola(passo, nomi).getBoundingSphere(new THREE.Sphere());
+  const meta = THREE.MathUtils.degToRad(camera.fov / 2);
+  const dist = sfera.radius / Math.sin(meta) * vi.zoom * Math.max(1, 1 / camera.aspect);
+  const az = THREE.MathUtils.degToRad(vi.az), el = THREE.MathUtils.degToRad(vi.el);
+  const dir = new V(Math.cos(el) * Math.cos(az), Math.cos(el) * Math.sin(az), Math.sin(el));
+  camDa = { pos: camera.position.clone(), centro: controlli.target.clone() };
+  camA = { pos: sfera.center.clone().addScaledVector(dir, dist), centro: sfera.center.clone() };
+  camT = 0;
+}
+
+function dimensiona() {
+  const w = vista.clientWidth, h = vista.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(dimensiona).observe(vista);
+dimensiona();
+
+// --- Stato e comandi -----------------------------------------------------
+const stato = { passo: 0, t: 1, attesa: 0, gioca: false, tutto: false, pausa: 0 };
+const lista = document.getElementById('passi');
+const bottoni = PASSI.map((p, i) => {
+  const li = document.createElement('li');
+  const b = document.createElement('button');
+  b.innerHTML = `<span class="n">${i === 0 ? '★' : i}</span><span>${p.titolo}</span>`;
+  b.addEventListener('click', () => { ferma(); vai(i); });
+  li.append(b);
+  lista.append(li);
+  return b;
+});
+const btnTutto = document.getElementById('tutto');
+
+function vai(passo, t = 0) {
+  stato.passo = passo;
+  inquadra(passo);
+  stato.t = passo === 0 ? 1 : t;
+  stato.attesa = ATTESA;
+  stato.gioca = passo !== 0 && t < 1;
+  controlli.autoRotate = passo === 0;
+  document.getElementById('titolo').textContent = passo === 0 ? PASSI[0].titolo : `${passo}. ${PASSI[passo].titolo}`;
+  document.getElementById('testo').innerHTML = PASSI[passo].testo;
+  bottoni.forEach((b, i) => {
+    b.classList.toggle('attivo', i === passo);
+    b.classList.toggle('fatto', i > 0 && i < passo);
+    if (i === passo) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  bottoni[passo].scrollIntoView({ block: 'nearest' });
+}
+function ferma() { stato.tutto = false; btnTutto.setAttribute('aria-pressed', 'false'); btnTutto.textContent = 'Riproduci tutto'; }
+
+document.getElementById('avanti').addEventListener('click', () => { ferma(); vai(Math.min(ULTIMO, stato.passo + 1)); });
+document.getElementById('indietro').addEventListener('click', () => { ferma(); vai(Math.max(0, stato.passo - 1)); });
+document.getElementById('rivedi').addEventListener('click', () => { ferma(); vai(stato.passo); });
+btnTutto.addEventListener('click', () => {
+  if (stato.tutto) { ferma(); return; }
+  stato.tutto = true;
+  btnTutto.setAttribute('aria-pressed', 'true');
+  btnTutto.textContent = '■ Ferma';
+  vai(1);
+});
+window.addEventListener('keydown', ev => {
+  if (ev.target.closest && ev.target.closest('button') && ev.key === ' ') return;
+  if (ev.key === 'ArrowRight') { ferma(); vai(Math.min(ULTIMO, stato.passo + 1)); }
+  else if (ev.key === 'ArrowLeft') { ferma(); vai(Math.max(0, stato.passo - 1)); }
+  else if (ev.key === ' ') { ev.preventDefault(); ferma(); vai(stato.passo); }
+});
+
+// #passo=5&t=0.5 apre un passo fermo a un certo punto (utile per le immagini)
+const indirizzo = new URLSearchParams(location.hash.slice(1));
+if (indirizzo.has('passo')) {
+  vai(Math.min(ULTIMO, Math.max(0, +indirizzo.get('passo'))), indirizzo.has('t') ? +indirizzo.get('t') : 0);
+  if (indirizzo.has('t')) { stato.gioca = false; stato.attesa = 0; }
+} else {
+  vai(0);
+}
+camera.position.copy(camA.pos);
+controlli.target.copy(camA.centro);
+camT = 1;
+
+const avanzamento = document.getElementById('avanzamento');
+let prima = performance.now();
+function ciclo(ora) {
+  const dt = Math.min((ora - prima) / 1000, 0.1);
+  prima = ora;
+  if (camT < 1) {
+    camT = Math.min(1, camT + dt / 0.8);
+    const k = morbido(camT);
+    camera.position.lerpVectors(camDa.pos, camA.pos, k);
+    controlli.target.lerpVectors(camDa.centro, camA.centro, k);
+  }
+  if (stato.gioca) {
+    if (stato.attesa > 0) stato.attesa -= dt;
+    else stato.t = Math.min(1, stato.t + dt / DURATA);
+    if (stato.t >= 1) { stato.gioca = false; stato.pausa = 1.0; }
+  } else if (stato.tutto && stato.pausa > 0) {
+    stato.pausa -= dt;
+    if (stato.pausa <= 0) {
+      if (stato.passo < ULTIMO) vai(stato.passo + 1); else ferma();
+    }
+  }
+  applica(stato.passo, stato.t);
+  avanzamento.style.width = `${(stato.passo === 0 ? 0 : stato.t) * 100}%`;
+  controlli.update();
+  renderer.render(scena, camera);
+  requestAnimationFrame(ciclo);
+}
+requestAnimationFrame(ciclo);
+</script>
+</body>
+</html>

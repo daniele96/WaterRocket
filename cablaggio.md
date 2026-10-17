@@ -335,6 +335,16 @@ void setup() {
 ## 8. Montaggio passo-passo
 
 Prova prima tutto su **breadboard** (con la XIAO alimentata via USB-C), poi salda.
+**Tutte le saldature si fanno al banco, prima di montare i pod**: dentro il pod il
+saldatore non arriva e scioglie il PETG. Due accortezze, perché poi i pezzi vanno
+infilati nel pod già collegati:
+
+- **Fili lunghi il giusto più circa 5 cm**: la slitta con la XIAO entra dal fondo e
+  MPU6050, BMP180, cicalino e anello si fissano dopo, con la XIAO già al suo posto.
+  Misura i percorsi sul pod stampato.
+- **Anello LED**: i tre fili vanno infilati nel foro centrale del tetto (da fuori verso
+  dentro) **prima** di saldarli alla XIAO. Saldati ai due capi non passano più.
+
 Ordine consigliato, collaudando dopo ogni passo (§9):
 
 1. **Pigtail batteria** sui pad BAT+/BAT− (§4). Collaudo: polarità e tensione.
@@ -347,11 +357,13 @@ Ordine consigliato, collaudando dopo ogni passo (§9):
    (0x68 e 0x77).
 5. **Cicalino** su D1 e GND. Collaudo: beep.
 6. **Anello LED**: resistenza da 330 Ω e condensatore saldati **sull'anello**, poi tre
-   fili: VDD → BAT+, GND, DIN → D3. Collaudo: test colori.
+   fili: VDD → BAT+, GND, DIN → D3, passati dal foro del tetto prima di saldarli alla
+   XIAO. Collaudo: test colori.
 7. **Sistemazione nei pod della cintura**, passo per passo in
-   [3dModels/cintura/README.md](3dModels/cintura/README.md): XIAO sulla slitta,
+   [3dModels/cintura/README.md](3dModels/cintura/README.md) e animata in
+   [3dModels/cintura/montaggio.html](3dModels/cintura/montaggio.html): XIAO sulla slitta,
    MPU6050 avvitato rigido, BMP180 coperto di spugna, cicalino nella sua coppa,
-   anello sul tetto, antenna fuori sul fianco, LiPo nel pod opposto.
+   anello sul tetto, antenna fuori sulla faccia della camera, LiPo nel pod opposto.
 
 Tutte le giunzioni con **guaina termorestringente**; i fili che escono dai pad della
 XIAO fissati con una goccia di colla a caldo (scarico della trazione).
@@ -411,7 +423,7 @@ l'anello lampeggia, manca il condensatore o l'anello è stato collegato al 3V3.
 
 - [ ] Batteria carica (≥ 3,9 V) e **fissata** nella sua tasca
 - [ ] Polarità del pigtail verificata (batteria nuova? misurala)
-- [ ] Antenna innestata, nella sua sede sul fianco e coperta di nastro
+- [ ] Antenna innestata, nella sua sede sulla faccia della camera e coperta di nastro
 - [ ] Anello verde (pronto) → nessun errore di SD o sensori
 - [ ] Razzo sulla rampa, fermo: **📏 Calibra prima del lancio** dalla webapp (o `z`
       da seriale). Non toccarlo per 3 s (anello blu), attendi i 2 beep corti e
