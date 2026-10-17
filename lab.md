@@ -431,6 +431,9 @@ Aggiungere una **5ª stazione opzionale di elettronica**:
 - 1 razzo "spia" con XIAO ESP32-S3 Sense in ogiva (vedi [WaterRocket.md §13](WaterRocket.md))
 - Registra video del volo e dati di quota/accelerazione
 - A debrief si analizzano i dati reali del volo → confronto con stime visive
+- **Stazione sensori** col [firmware «istruzione»](firmware-istruzione/README.md): una demo
+  alla volta (barometro, accelerometro, giroscopio, cicalino, anello LED, microfono, WiFi),
+  scelta da tastiera, con il codice da mostrare a schermo e le prove da far fare
 - **Richiede paracadute** per non rompere l'elettronica
 
 Costo aggiuntivo per ~1 razzo strumentato: ~50 € una tantum (la board si riusa).
