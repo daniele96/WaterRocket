@@ -28,6 +28,10 @@ Altri documenti:
 - **[firmware/](firmware/)** — registratore di volo (video + audio su microSD) e
   piattaforma web dei lanci via WiFi
 - **[lab.md](lab.md)** — laboratorio con i bambini
+- **[slide/](slide/README.md)** — presentazione per Meet and Code (Marp): microcontrollore,
+  sensori e comunicazioni spiegati da zero
+- **[firmware-istruzione/](firmware-istruzione/README.md)** — demo didattiche dei sensori, una
+  alla volta sul monitor seriale, con codice corto da mostrare ai ragazzi
 
 ## ⚠️ Sicurezza
 

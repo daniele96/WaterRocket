@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 440" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Diagramma temporale I2C: start, indirizzo 0x77, scrittura, ACK</title>
+  <rect x="190" y="70" width="644" height="300" fill="#e3f0ff"/>
+  <rect x="834" y="70" width="92" height="300" fill="#fff1e6"/>
+  <rect x="926" y="70" width="92" height="300" fill="#e6f6ec"/>
+  <rect x="130" y="70" width="60" height="300" fill="#eef1f5"/>
+  <text x="512" y="56" text-anchor="middle" font-size="21" font-weight="700" fill="#1d6fd8">indirizzo 0x77 = «BMP180, dico a te»</text>
+  <text x="880" y="56" text-anchor="middle" font-size="21" font-weight="700" fill="#e8630a">scrivo</text>
+  <text x="972" y="56" text-anchor="middle" font-size="21" font-weight="700" fill="#2a9d50">«ci sono!»</text>
+  <text x="160" y="56" text-anchor="middle" font-size="19" font-weight="700" fill="#5b6475">START</text>
+  <line x1="236" y1="100" x2="236" y2="316" stroke="#9aa5b4" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <line x1="328" y1="100" x2="328" y2="316" stroke="#9aa5b4" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <line x1="420" y1="100" x2="420" y2="316" stroke="#9aa5b4" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <line x1="512" y1="100" x2="512" y2="316" stroke="#9aa5b4" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <line x1="604" y1="100" x2="604" y2="316" stroke="#9aa5b4" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <line x1="696" y1="100" x2="696" y2="316" stroke="#9aa5b4" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <line x1="788" y1="100" x2="788" y2="316" stroke="#9aa5b4" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <line x1="880" y1="100" x2="880" y2="316" stroke="#9aa5b4" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <line x1="972" y1="100" x2="972" y2="316" stroke="#9aa5b4" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <path d="M70,100 H190 V160 H220 V100 H252 V160 H282 V160 H312 V100 H344 V160 H374 V160 H404 V100 H436 V160 H466 V160 H496 V100 H528 V160 H558 V160 H588 V100 H620 V160 H650 V160 H680 V100 H712 V160 H742 V160 H772 V100 H804 V160 H834 V160 H864 V100 H896 V160 H926 V160 H956 V100 H988 V160 H1018 H1070" fill="none" stroke="#c98a00" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M70,250 H150 L158,310 H196 L204,250 H472 L480,310 H564 L572,250 H840 L848,310 H1024 L1032,250 H1070" fill="none" stroke="#1d6fd8" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="236" cy="250" r="6" fill="#0b1d3a"/>
+  <text x="236" y="356" text-anchor="middle" font-size="30" font-weight="800" fill="#0b1d3a">1</text>
+  <circle cx="328" cy="250" r="6" fill="#0b1d3a"/>
+  <text x="328" y="356" text-anchor="middle" font-size="30" font-weight="800" fill="#0b1d3a">1</text>
+  <circle cx="420" cy="250" r="6" fill="#0b1d3a"/>
+  <text x="420" y="356" text-anchor="middle" font-size="30" font-weight="800" fill="#0b1d3a">1</text>
+  <circle cx="512" cy="310" r="6" fill="#0b1d3a"/>
+  <text x="512" y="356" text-anchor="middle" font-size="30" font-weight="800" fill="#0b1d3a">0</text>
+  <circle cx="604" cy="250" r="6" fill="#0b1d3a"/>
+  <text x="604" y="356" text-anchor="middle" font-size="30" font-weight="800" fill="#0b1d3a">1</text>
+  <circle cx="696" cy="250" r="6" fill="#0b1d3a"/>
+  <text x="696" y="356" text-anchor="middle" font-size="30" font-weight="800" fill="#0b1d3a">1</text>
+  <circle cx="788" cy="250" r="6" fill="#0b1d3a"/>
+  <text x="788" y="356" text-anchor="middle" font-size="30" font-weight="800" fill="#0b1d3a">1</text>
+  <circle cx="880" cy="310" r="6" fill="#0b1d3a"/>
+  <text x="880" y="356" text-anchor="middle" font-size="30" font-weight="800" fill="#e8630a">0</text>
+  <circle cx="972" cy="310" r="6" fill="#0b1d3a"/>
+  <text x="972" y="356" text-anchor="middle" font-size="30" font-weight="800" fill="#2a9d50">0</text>
+  <text x="20" y="138" font-size="24" font-weight="800" fill="#c98a00">SCL</text>
+  <text x="20" y="288" font-size="24" font-weight="800" fill="#1d6fd8">SDA</text>
+  <text x="1080" y="290" text-anchor="end" font-size="28" fill="#5b6475">…</text>
+  <circle cx="40" cy="410" r="6" fill="#0b1d3a"/>
+  <text x="56" y="417" font-size="20" fill="#1f2937">= il bit viene letto quando SCL è alto · SDA cambia solo quando SCL è basso · 100 000 tic al secondo</text>
+</svg>

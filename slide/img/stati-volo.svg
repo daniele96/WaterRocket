@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 410" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Le tre fasi riconosciute dal firmware: a terra, in volo, atterrato</title>
+  <defs>
+    <marker id="p" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0b1d3a"/>
+    </marker>
+    <filter id="alone" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="5"/></filter>
+  </defs>
+
+  <!-- condizioni -->
+  <g text-anchor="middle" fill="#1f2937">
+    <text x="360" y="44" font-size="24" font-weight="800" fill="#e8630a">più di 2,5 g</text>
+    <text x="360" y="74" font-size="20">per 4 letture di fila</text>
+    <text x="740" y="44" font-size="24" font-weight="800" fill="#e8630a">fermo a 1 g</text>
+    <text x="740" y="74" font-size="20">per 3 secondi</text>
+  </g>
+
+  <!-- stati -->
+  <rect x="20" y="100" width="300" height="180" rx="22" fill="#e6f6ec" stroke="#2a9d50" stroke-width="3"/>
+  <text x="170" y="152" text-anchor="middle" font-size="32" font-weight="800" fill="#0b1d3a">A TERRA</text>
+  <circle cx="64" cy="200" r="16" fill="#2a9d50" filter="url(#alone)"/><circle cx="64" cy="200" r="12" fill="#2a9d50"/>
+  <text x="92" y="208" font-size="22" fill="#1f2937">anello verde</text>
+  <text x="44" y="250" font-size="19" fill="#5b6475">aspetta e si tara da fermo</text>
+
+  <rect x="400" y="100" width="300" height="180" rx="22" fill="#fff1e6" stroke="#ff7a1a" stroke-width="3"/>
+  <text x="550" y="152" text-anchor="middle" font-size="32" font-weight="800" fill="#0b1d3a">IN VOLO</text>
+  <circle cx="444" cy="200" r="18" fill="#ffd166" filter="url(#alone)"/><circle cx="444" cy="200" r="12" fill="#ffffff" stroke="#c5ccd6" stroke-width="2"/>
+  <text x="472" y="208" font-size="22" fill="#1f2937">bianco al massimo</text>
+  <text x="424" y="250" font-size="19" fill="#5b6475">registra e cerca l'apogeo</text>
+
+  <rect x="780" y="100" width="300" height="180" rx="22" fill="#e3f0ff" stroke="#1d6fd8" stroke-width="3"/>
+  <text x="930" y="152" text-anchor="middle" font-size="32" font-weight="800" fill="#0b1d3a">ATTERRATO</text>
+  <circle cx="824" cy="200" r="12" fill="#ffffff" stroke="#9aa5b4" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="852" y="208" font-size="22" fill="#1f2937">lampo + bip ogni 1 s</text>
+  <text x="804" y="250" font-size="19" fill="#5b6475">«sono qui, venite a prendermi»</text>
+
+  <!-- transizioni -->
+  <g stroke="#0b1d3a" stroke-width="5" fill="none" marker-end="url(#p)">
+    <line x1="326" y1="190" x2="390" y2="190"/>
+    <line x1="706" y1="190" x2="770" y2="190"/>
+    <path d="M930,286 V336 H170 V296"/>
+  </g>
+  <text x="550" y="376" text-anchor="middle" font-size="21" fill="#1f2937">recuperato il razzo, dal telefono: <tspan font-weight="700">«spegni cicalino»</tspan> → si riarma per il prossimo lancio</text>
+</svg>

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 520" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Schema a blocchi dell'elettronica di volo e dei modi di comunicare</title>
+  <defs>
+    <marker id="f" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0b1d3a"/>
+    </marker>
+  </defs>
+
+  <!-- collegamenti -->
+  <g stroke-width="4" fill="none" marker-end="url(#f)">
+    <path d="M230,95 L440,190" stroke="#1d6fd8"/>
+    <path d="M230,195 L440,235" stroke="#1d6fd8"/>
+    <path d="M230,295 L440,285" stroke="#7b4fd1"/>
+    <path d="M230,395 L440,330" stroke="#7b4fd1"/>
+    <path d="M660,190 L870,95" stroke="#5b6475"/>
+    <path d="M660,235 L870,195" stroke="#2a9d50"/>
+    <path d="M660,285 L870,295" stroke="#5b6475"/>
+    <path d="M660,330 L870,395" stroke="#e8630a" stroke-dasharray="10 8"/>
+    <path d="M550,440 L550,378" stroke="#d64545"/>
+  </g>
+  <g font-size="18" font-weight="700">
+    <text x="240" y="81" fill="#1d6fd8">I²C</text>
+    <text x="240" y="181" fill="#1d6fd8">I²C</text>
+    <text x="240" y="281" fill="#7b4fd1">8 fili in parallelo</text>
+    <text x="240" y="428" fill="#7b4fd1">PDM, 2 fili</text>
+    <text x="860" y="81" text-anchor="end" fill="#5b6475">SPI, 4 fili</text>
+    <text x="860" y="181" text-anchor="end" fill="#2a9d50">1 filo, a tempo</text>
+    <text x="860" y="281" text-anchor="end" fill="#5b6475">acceso / spento</text>
+    <text x="860" y="428" text-anchor="end" fill="#e8630a">onde radio: WiFi</text>
+  </g>
+
+  <!-- XIAO -->
+  <rect x="440" y="150" width="220" height="228" rx="20" fill="#0b1d3a"/>
+  <text x="550" y="230" text-anchor="middle" font-size="32" font-weight="800" fill="#ffffff">XIAO</text>
+  <text x="550" y="262" text-anchor="middle" font-size="20" fill="#c9d4e3">ESP32-S3 Sense</text>
+  <text x="550" y="306" text-anchor="middle" font-size="18" fill="#9fb0c8">2 core · 240 MHz</text>
+  <text x="550" y="332" text-anchor="middle" font-size="18" fill="#9fb0c8">8 MB di memoria</text>
+
+  <!-- ingressi -->
+  <g fill="#e3f0ff" stroke="#1d6fd8" stroke-width="2.5">
+    <rect x="20" y="60" width="210" height="70" rx="14"/><rect x="20" y="160" width="210" height="70" rx="14"/>
+  </g>
+  <g fill="#f0eafb" stroke="#7b4fd1" stroke-width="2.5">
+    <rect x="20" y="260" width="210" height="70" rx="14"/><rect x="20" y="360" width="210" height="70" rx="14"/>
+  </g>
+  <g text-anchor="middle">
+    <text x="125" y="92" font-size="24" font-weight="800" fill="#0b1d3a">BMP180</text><text x="125" y="118" font-size="17" fill="#5b6475">pressione → quota</text>
+    <text x="125" y="192" font-size="24" font-weight="800" fill="#0b1d3a">MPU6050</text><text x="125" y="218" font-size="17" fill="#5b6475">accelerazione, rotazione</text>
+    <text x="125" y="292" font-size="24" font-weight="800" fill="#0b1d3a">camera</text><text x="125" y="318" font-size="17" fill="#5b6475">video del volo</text>
+    <text x="125" y="392" font-size="24" font-weight="800" fill="#0b1d3a">microfono</text><text x="125" y="418" font-size="17" fill="#5b6475">audio del volo</text>
+  </g>
+
+  <!-- uscite -->
+  <g fill="#eef1f5" stroke="#7d8aa0" stroke-width="2.5">
+    <rect x="870" y="60" width="210" height="70" rx="14"/><rect x="870" y="260" width="210" height="70" rx="14"/>
+  </g>
+  <rect x="870" y="160" width="210" height="70" rx="14" fill="#e6f6ec" stroke="#2a9d50" stroke-width="2.5"/>
+  <rect x="870" y="360" width="210" height="70" rx="14" fill="#fff1e6" stroke="#ff7a1a" stroke-width="2.5"/>
+  <g text-anchor="middle">
+    <text x="975" y="92" font-size="24" font-weight="800" fill="#0b1d3a">microSD</text><text x="975" y="118" font-size="17" fill="#5b6475">registra tutto</text>
+    <text x="975" y="192" font-size="24" font-weight="800" fill="#0b1d3a">anello LED</text><text x="975" y="218" font-size="17" fill="#5b6475">dice lo stato</text>
+    <text x="975" y="292" font-size="24" font-weight="800" fill="#0b1d3a">cicalino</text><text x="975" y="318" font-size="17" fill="#5b6475">per ritrovarlo</text>
+    <text x="975" y="392" font-size="24" font-weight="800" fill="#0b1d3a">telefono</text><text x="975" y="418" font-size="17" fill="#5b6475">video e grafici</text>
+  </g>
+
+  <!-- batteria -->
+  <rect x="410" y="440" width="280" height="64" rx="14" fill="#fdeaea" stroke="#d64545" stroke-width="2.5"/>
+  <text x="550" y="469" text-anchor="middle" font-size="22" font-weight="800" fill="#0b1d3a">batteria LiPo</text>
+  <text x="550" y="493" text-anchor="middle" font-size="17" fill="#5b6475">3,7 V · 400 mAh · ~10 g</text>
+</svg>

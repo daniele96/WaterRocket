@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 440" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Il ciclo del microcontrollore: sento, decido, agisco</title>
+  <defs>
+    <marker id="punta" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0b1d3a"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="30" width="300" height="260" rx="24" fill="#e3f0ff" stroke="#1d6fd8" stroke-width="3"/>
+  <text x="170" y="88" text-anchor="middle" font-size="38" font-weight="800" fill="#1d6fd8">SENTO</text>
+  <text x="170" y="120" text-anchor="middle" font-size="20" fill="#5b6475">input</text>
+  <g font-size="22" fill="#1f2937" text-anchor="middle">
+    <text x="170" y="182">la pressione dell'aria</text>
+    <text x="170" y="218">l'accelerazione</text>
+    <text x="170" y="254">un comando dal telefono</text>
+  </g>
+
+  <rect x="400" y="30" width="300" height="260" rx="24" fill="#fff1e6" stroke="#ff7a1a" stroke-width="3"/>
+  <text x="550" y="88" text-anchor="middle" font-size="38" font-weight="800" fill="#e8630a">DECIDO</text>
+  <text x="550" y="120" text-anchor="middle" font-size="20" fill="#5b6475">il programma</text>
+  <g font-size="22" fill="#1f2937" text-anchor="middle">
+    <text x="550" y="182">calcola la quota</text>
+    <text x="550" y="218">confronta con le soglie</text>
+    <text x="550" y="254">sceglie cosa fare</text>
+  </g>
+
+  <rect x="780" y="30" width="300" height="260" rx="24" fill="#e6f6ec" stroke="#2a9d50" stroke-width="3"/>
+  <text x="930" y="88" text-anchor="middle" font-size="38" font-weight="800" fill="#2a9d50">AGISCO</text>
+  <text x="930" y="120" text-anchor="middle" font-size="20" fill="#5b6475">output</text>
+  <g font-size="22" fill="#1f2937" text-anchor="middle">
+    <text x="930" y="182">accende i LED</text>
+    <text x="930" y="218">fa suonare il cicalino</text>
+    <text x="930" y="254">scrive sulla microSD</text>
+  </g>
+
+  <g stroke="#0b1d3a" stroke-width="5" fill="none" marker-end="url(#punta)">
+    <line x1="326" y1="160" x2="390" y2="160"/>
+    <line x1="706" y1="160" x2="770" y2="160"/>
+    <path d="M930,296 V368 H170 V306"/>
+  </g>
+  <text x="550" y="412" text-anchor="middle" font-size="24" font-style="italic" fill="#1f2937">…e di nuovo da capo, senza fermarsi mai: sul razzo 100 volte al secondo</text>
+</svg>

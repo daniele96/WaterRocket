@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Sintesi additiva: rosso, verde e blu sommati danno tutti i colori</title>
+  <rect width="600" height="500" rx="24" fill="#0b1d3a"/>
+  <g style="isolation:isolate">
+    <circle cx="235" cy="195" r="125" fill="#ff0000" style="mix-blend-mode:screen"/>
+    <circle cx="365" cy="195" r="125" fill="#00ff00" style="mix-blend-mode:screen"/>
+    <circle cx="300" cy="305" r="125" fill="#0000ff" style="mix-blend-mode:screen"/>
+  </g>
+  <g font-size="22" font-weight="700" text-anchor="middle">
+    <text x="175" y="160" fill="#ffffff">rosso</text>
+    <text x="425" y="160" fill="#0b1d3a">verde</text>
+    <text x="300" y="390" fill="#ffffff">blu</text>
+    <text x="300" y="140" fill="#0b1d3a">giallo</text>
+    <text x="215" y="300" fill="#ffffff">magenta</text>
+    <text x="385" y="300" fill="#0b1d3a">ciano</text>
+    <text x="300" y="240" fill="#0b1d3a">bianco</text>
+  </g>
+  <text x="300" y="476" text-anchor="middle" font-size="20" fill="#c9d4e3">luce che si somma: 3 LED = tutti i colori</text>
+</svg>

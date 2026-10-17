@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 390" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>WS2812B: un bit 0 è un impulso corto, un bit 1 un impulso lungo</title>
+  <defs>
+    <marker id="d" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,1 L9,5 L0,9 z" fill="#5b6475"/>
+    </marker>
+  </defs>
+
+  <text x="298" y="40" text-anchor="middle" font-size="26" font-weight="800" fill="#1d6fd8">bit 0 = impulso corto</text>
+  <text x="828" y="40" text-anchor="middle" font-size="26" font-weight="800" fill="#e8630a">bit 1 = impulso lungo</text>
+
+  <path d="M30,230 H60 V110 H212 V230 H535 V110 H548" fill="none" stroke="#1d6fd8" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M560,230 H590 V110 H894 V230 H1065 V110 H1078" fill="none" stroke="#e8630a" stroke-width="6" stroke-linejoin="round"/>
+
+  <g stroke="#5b6475" stroke-width="2" marker-start="url(#d)" marker-end="url(#d)">
+    <line x1="64" y1="86" x2="208" y2="86"/>
+    <line x1="594" y1="86" x2="890" y2="86"/>
+    <line x1="64" y1="262" x2="531" y2="262"/>
+    <line x1="594" y1="262" x2="1061" y2="262"/>
+  </g>
+  <g font-size="22" font-weight="700" fill="#1f2937" text-anchor="middle">
+    <text x="136" y="74">0,4 µs</text>
+    <text x="742" y="74">0,8 µs</text>
+    <text x="298" y="294">1,25 µs</text>
+    <text x="828" y="294">1,25 µs</text>
+  </g>
+
+  <text x="550" y="342" text-anchor="middle" font-size="22" fill="#1f2937">nessun filo di orologio: il LED <tspan font-weight="800">misura quanto dura</tspan> l'impulso (1 µs = un milionesimo di secondo)</text>
+  <text x="550" y="376" text-anchor="middle" font-size="22" fill="#1f2937">800 000 bit al secondo → 8 LED × 24 bit si aggiornano in <tspan font-weight="800">0,24 millesimi di secondo</tspan></text>
+</svg>

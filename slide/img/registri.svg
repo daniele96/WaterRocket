@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 560" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>I registri dell'MPU6050 come una cassettiera numerata</title>
+  <text x="280" y="36" text-anchor="middle" font-size="24" font-weight="800" fill="#0b1d3a">MPU6050: la cassettiera</text>
+  <rect x="40" y="56" width="440" height="476" rx="14" fill="#e8edf4" stroke="#7d8aa0" stroke-width="2.5"/>
+
+  <g stroke-width="2">
+    <rect x="60" y="76" width="400" height="62" rx="8" fill="#fff1e6" stroke="#ff7a1a"/>
+    <rect x="60" y="150" width="400" height="62" rx="8" fill="#fff1e6" stroke="#ff7a1a"/>
+    <rect x="60" y="224" width="400" height="62" rx="8" fill="#fff1e6" stroke="#ff7a1a"/>
+    <rect x="60" y="298" width="400" height="62" rx="8" fill="#ffffff" stroke="#9aa5b4"/>
+    <rect x="60" y="372" width="400" height="62" rx="8" fill="#ffffff" stroke="#9aa5b4"/>
+    <rect x="60" y="446" width="400" height="62" rx="8" fill="#ffffff" stroke="#9aa5b4" stroke-dasharray="6 5"/>
+  </g>
+  <g fill="#9aa5b4">
+    <rect x="424" y="100" width="22" height="14" rx="4"/><rect x="424" y="174" width="22" height="14" rx="4"/>
+    <rect x="424" y="248" width="22" height="14" rx="4"/><rect x="424" y="322" width="22" height="14" rx="4"/>
+    <rect x="424" y="396" width="22" height="14" rx="4"/>
+  </g>
+  <g font-size="20" font-weight="800" fill="#e8630a" font-family="Consolas, Menlo, monospace">
+    <text x="78" y="114">0x3B…40</text><text x="78" y="188">0x41…42</text><text x="78" y="262">0x43…48</text>
+    <text x="78" y="336">0x6B</text><text x="78" y="410">0x75</text>
+  </g>
+  <g font-size="20" fill="#1f2937">
+    <text x="200" y="114">accelerazione X Y Z</text>
+    <text x="200" y="188">temperatura</text>
+    <text x="200" y="262">rotazione X Y Z</text>
+    <text x="200" y="336">accensione</text>
+    <text x="200" y="410">«chi sei?» → 0x68</text>
+    <text x="260" y="484" text-anchor="middle" fill="#5b6475">… e altri cento cassetti</text>
+  </g>
+
+  <path d="M492,78 h12 v206 h-12" fill="none" stroke="#e8630a" stroke-width="3"/>
+  <text x="530" y="181" text-anchor="middle" font-size="20" font-weight="800" fill="#e8630a" transform="rotate(90 530 181)">14 byte in un colpo</text>
+</svg>

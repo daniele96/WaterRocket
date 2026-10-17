@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 440" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Bus I2C: la XIAO e due sensori sugli stessi due fili SDA e SCL</title>
+
+  <!-- XIAO -->
+  <rect x="30" y="130" width="190" height="200" rx="18" fill="#0b1d3a"/>
+  <text x="125" y="222" text-anchor="middle" font-size="34" font-weight="800" fill="#ffffff">XIAO</text>
+  <text x="125" y="256" text-anchor="middle" font-size="20" fill="#c9d4e3">fa le domande</text>
+
+  <!-- fumetto -->
+  <path d="M250,40 H640 a24,24 0 0 1 24,24 v4 a24,24 0 0 1 -24,24 H300 l-40,34 l8,-34 h-18 a24,24 0 0 1 -24,-24 v-4 a24,24 0 0 1 24,-24 z" fill="#ffffff" stroke="#0b1d3a" stroke-width="2.5"/>
+  <text x="445" y="74" text-anchor="middle" font-size="22" fill="#1f2937">«<tspan font-weight="800" fill="#e8630a">0x77</tspan>, mi dai la pressione?»</text>
+
+  <!-- binari -->
+  <line x1="220" y1="170" x2="1070" y2="170" stroke="#1d6fd8" stroke-width="7" stroke-linecap="round"/>
+  <line x1="220" y1="240" x2="1070" y2="240" stroke="#c98a00" stroke-width="7" stroke-linecap="round"/>
+  <text x="1070" y="156" text-anchor="end" font-size="24" font-weight="800" fill="#1d6fd8">SDA · i dati</text>
+  <text x="1070" y="226" text-anchor="end" font-size="24" font-weight="800" fill="#c98a00">SCL · l'orologio</text>
+
+  <!-- discese verso i sensori: SDA scavalca SCL con un ponticello -->
+  <g fill="none" stroke-width="5">
+    <path d="M440,170 V228 a12,12 0 0 1 0,24 V320" stroke="#1d6fd8"/>
+    <path d="M520,240 V320" stroke="#c98a00"/>
+    <path d="M760,170 V228 a12,12 0 0 1 0,24 V320" stroke="#1d6fd8"/>
+    <path d="M840,240 V320" stroke="#c98a00"/>
+  </g>
+  <g fill="#0b1d3a">
+    <circle cx="440" cy="170" r="8"/><circle cx="520" cy="240" r="8"/>
+    <circle cx="760" cy="170" r="8"/><circle cx="840" cy="240" r="8"/>
+  </g>
+
+  <!-- sensori -->
+  <rect x="380" y="320" width="200" height="104" rx="14" fill="#e3f0ff" stroke="#1d6fd8" stroke-width="3"/>
+  <text x="480" y="356" text-anchor="middle" font-size="26" font-weight="800" fill="#0b1d3a">BMP180</text>
+  <text x="480" y="384" text-anchor="middle" font-size="18" fill="#5b6475">altimetro</text>
+  <text x="480" y="412" text-anchor="middle" font-size="22" font-weight="800" fill="#e8630a">0x77</text>
+
+  <rect x="700" y="320" width="200" height="104" rx="14" fill="#e3f0ff" stroke="#1d6fd8" stroke-width="3"/>
+  <text x="800" y="356" text-anchor="middle" font-size="26" font-weight="800" fill="#0b1d3a">MPU6050</text>
+  <text x="800" y="384" text-anchor="middle" font-size="18" fill="#5b6475">accelerometro</text>
+  <text x="800" y="412" text-anchor="middle" font-size="22" font-weight="800" fill="#e8630a">0x68</text>
+
+  <rect x="935" y="320" width="150" height="104" rx="14" fill="none" stroke="#9aa5b4" stroke-width="2.5" stroke-dasharray="8 6"/>
+  <text x="1010" y="358" text-anchor="middle" font-size="18" fill="#5b6475">un altro?</text>
+  <text x="1010" y="384" text-anchor="middle" font-size="18" fill="#5b6475">basta un</text>
+  <text x="1010" y="408" text-anchor="middle" font-size="18" fill="#5b6475">indirizzo nuovo</text>
+
+  <text x="30" y="380" font-size="18" fill="#5b6475">+ 3,3 V e GND:</text>
+  <text x="30" y="404" font-size="18" fill="#5b6475">4 fili in tutto</text>
+</svg>

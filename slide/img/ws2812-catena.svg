@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 130 1100 260" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>WS2812B: i pacchetti di colore passano di LED in LED su un solo filo</title>
+  <defs>
+    <filter id="alone" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+
+  <!-- XIAO -->
+  <rect x="20" y="170" width="140" height="80" rx="14" fill="#0b1d3a"/>
+  <text x="90" y="219" text-anchor="middle" font-size="26" font-weight="800" fill="#ffffff">XIAO</text>
+
+  <!-- filo dati -->
+  <g stroke="#2a9d50" stroke-width="5">
+    <line x1="160" y1="210" x2="300" y2="210"/><line x1="380" y1="210" x2="530" y2="210"/>
+    <line x1="610" y1="210" x2="760" y2="210"/><line x1="840" y1="210" x2="990" y2="210"/>
+    <line x1="1070" y1="210" x2="1090" y2="210" stroke-dasharray="4 5"/>
+  </g>
+
+  <!-- pacchetti (il primo partito è il più a destra) -->
+  <g stroke="#0b1d3a" stroke-width="1.5">
+    <rect x="163" y="168" width="28" height="26" rx="4" fill="#ffcc00"/><rect x="196" y="168" width="28" height="26" rx="4" fill="#2f6bff"/>
+    <rect x="229" y="168" width="28" height="26" rx="4" fill="#2ecc40"/><rect x="262" y="168" width="28" height="26" rx="4" fill="#ff3b3b"/>
+    <rect x="426" y="168" width="28" height="26" rx="4" fill="#ffcc00"/><rect x="459" y="168" width="28" height="26" rx="4" fill="#2f6bff"/>
+    <rect x="492" y="168" width="28" height="26" rx="4" fill="#2ecc40"/>
+    <rect x="689" y="168" width="28" height="26" rx="4" fill="#ffcc00"/><rect x="722" y="168" width="28" height="26" rx="4" fill="#2f6bff"/>
+    <rect x="952" y="168" width="28" height="26" rx="4" fill="#ffcc00"/>
+  </g>
+
+  <!-- LED -->
+  <g fill="#ffffff" stroke="#c5ccd6" stroke-width="2">
+    <rect x="300" y="172" width="80" height="76" rx="8"/><rect x="530" y="172" width="80" height="76" rx="8"/>
+    <rect x="760" y="172" width="80" height="76" rx="8"/><rect x="990" y="172" width="80" height="76" rx="8"/>
+  </g>
+  <circle cx="340" cy="210" r="26" fill="#ff3b3b" filter="url(#alone)"/><circle cx="340" cy="210" r="20" fill="#ff3b3b"/>
+  <circle cx="570" cy="210" r="26" fill="#2ecc40" filter="url(#alone)"/><circle cx="570" cy="210" r="20" fill="#2ecc40"/>
+  <circle cx="800" cy="210" r="26" fill="#2f6bff" filter="url(#alone)"/><circle cx="800" cy="210" r="20" fill="#2f6bff"/>
+  <circle cx="1030" cy="210" r="26" fill="#ffcc00" filter="url(#alone)"/><circle cx="1030" cy="210" r="20" fill="#ffcc00"/>
+  <g font-size="19" font-weight="700" fill="#0b1d3a" text-anchor="middle">
+    <text x="340" y="160">LED 1</text><text x="570" y="160">LED 2</text><text x="800" y="160">LED 3</text><text x="1030" y="160">LED 4…</text>
+  </g>
+  <g font-size="18" fill="#5b6475" text-anchor="middle">
+    <text x="340" y="276">tiene il rosso</text><text x="570" y="276">tiene il verde</text>
+    <text x="800" y="276">tiene il blu</text><text x="1030" y="276">tiene il giallo</text>
+  </g>
+
+  <text x="550" y="330" text-anchor="middle" font-size="22" fill="#1f2937">ogni pacchetto = <tspan font-weight="800">24 bit</tspan>: 8 per il verde, 8 per il rosso, 8 per il blu</text>
+  <text x="550" y="366" text-anchor="middle" font-size="22" fill="#1f2937">ogni LED <tspan font-weight="800">tiene il primo</tspan> pacchetto che arriva e <tspan font-weight="800">passa avanti</tspan> gli altri</text>
+</svg>

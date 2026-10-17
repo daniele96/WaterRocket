@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 500" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Accelerometro MEMS: una massa di silicio appesa a molle tra due piastre</title>
+  <defs>
+    <marker id="pd" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e8630a"/>
+    </marker>
+  </defs>
+
+  <!-- ================= fermo ================= -->
+  <text x="270" y="40" text-anchor="middle" font-size="26" font-weight="800" fill="#0b1d3a">fermo</text>
+  <rect x="30" y="60" width="480" height="320" rx="10" fill="#eef1f5" stroke="#9aa5b4" stroke-width="2"/>
+  <rect x="30" y="205" width="22" height="20" fill="#5b6475"/><rect x="50" y="150" width="24" height="130" fill="#5b6475"/>
+  <rect x="488" y="205" width="22" height="20" fill="#5b6475"/><rect x="466" y="150" width="24" height="130" fill="#5b6475"/>
+  <g fill="none" stroke="#0b1d3a" stroke-width="3.5" stroke-linejoin="round">
+    <path d="M270,60 V62 l15,6 l-30,12 l30,12 l-30,12 l30,12 l-30,12 l15,6 V150"/>
+    <path d="M270,280 V296 l15,6 l-30,12 l30,12 l-30,12 l30,12 l-30,12 l15,6 V380"/>
+  </g>
+  <rect x="200" y="150" width="140" height="130" rx="6" fill="#ff7a1a"/>
+  <text x="270" y="224" text-anchor="middle" font-size="24" font-weight="800" fill="#ffffff">massa</text>
+  <g stroke="#7d8aa0" stroke-width="2" stroke-dasharray="5 5">
+    <line x1="80" y1="250" x2="194" y2="250"/><line x1="346" y1="250" x2="460" y2="250"/>
+  </g>
+  <text x="137" y="222" text-anchor="middle" font-size="26" font-weight="800" fill="#1d6fd8">C1</text>
+  <text x="403" y="222" text-anchor="middle" font-size="26" font-weight="800" fill="#1d6fd8">C2</text>
+  <text x="270" y="424" text-anchor="middle" font-size="24" fill="#1f2937">distanze uguali: <tspan font-weight="800">C1 = C2</tspan></text>
+
+  <!-- ================= accelera ================= -->
+  <text x="830" y="40" text-anchor="middle" font-size="26" font-weight="800" fill="#0b1d3a">il chip accelera verso destra</text>
+  <rect x="590" y="60" width="480" height="320" rx="10" fill="#eef1f5" stroke="#9aa5b4" stroke-width="2"/>
+  <rect x="590" y="205" width="22" height="20" fill="#5b6475"/><rect x="610" y="150" width="24" height="130" fill="#5b6475"/>
+  <rect x="1048" y="205" width="22" height="20" fill="#5b6475"/><rect x="1026" y="150" width="24" height="130" fill="#5b6475"/>
+  <g fill="none" stroke="#0b1d3a" stroke-width="3.5" stroke-linejoin="round">
+    <path d="M830,60 V62 L840.8,68 L802.5,80 L824.2,92 L785.8,104 L807.5,116 L769.2,128 L780,134 V150"/>
+    <path d="M780,280 V296 L799.2,302 L777.5,314 L815.8,326 L794.2,338 L832.5,350 L810.8,362 L830,368 V380"/>
+  </g>
+  <rect x="710" y="150" width="140" height="130" rx="6" fill="#ff7a1a"/>
+  <text x="780" y="214" text-anchor="middle" font-size="24" font-weight="800" fill="#ffffff">massa</text>
+  <text x="780" y="246" text-anchor="middle" font-size="17" fill="#ffffff">resta indietro</text>
+  <g stroke="#7d8aa0" stroke-width="2" stroke-dasharray="5 5">
+    <line x1="640" y1="250" x2="704" y2="250"/><line x1="856" y1="250" x2="1020" y2="250"/>
+  </g>
+  <text x="672" y="222" text-anchor="middle" font-size="26" font-weight="800" fill="#1d6fd8">C1</text>
+  <text x="938" y="222" text-anchor="middle" font-size="26" font-weight="800" fill="#1d6fd8">C2</text>
+  <text x="830" y="424" text-anchor="middle" font-size="24" fill="#1f2937">a sinistra più vicina: <tspan font-weight="800">C1 &gt; C2</tspan></text>
+  <line x1="700" y1="468" x2="950" y2="468" stroke="#e8630a" stroke-width="8" marker-end="url(#pd)"/>
+  <text x="680" y="476" text-anchor="end" font-size="20" font-weight="700" fill="#e8630a">accelerazione</text>
+</svg>

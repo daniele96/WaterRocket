@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 400" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Un byte sul filo: 0 V vale 0, 3,3 V vale 1</title>
+  <g stroke="#d5dbe3" stroke-width="2" stroke-dasharray="6 6">
+    <line x1="260" y1="50" x2="260" y2="240"/><line x1="370" y1="50" x2="370" y2="240"/>
+    <line x1="480" y1="50" x2="480" y2="240"/><line x1="590" y1="50" x2="590" y2="240"/>
+    <line x1="700" y1="50" x2="700" y2="240"/><line x1="810" y1="50" x2="810" y2="240"/>
+    <line x1="920" y1="50" x2="920" y2="240"/>
+  </g>
+  <g font-size="22" text-anchor="end" fill="#1f2937">
+    <text x="130" y="88"><tspan font-weight="700">3,3 V</tspan> = 1</text>
+    <text x="130" y="228"><tspan font-weight="700">0 V</tspan> = 0</text>
+  </g>
+  <path d="M150,220 H260 V80 H590 V220 H700 V80 H1030" fill="none" stroke="#ff7a1a" stroke-width="7" stroke-linejoin="round"/>
+  <g font-size="44" font-weight="800" text-anchor="middle">
+    <text x="205" y="288" fill="#1d6fd8">0</text><text x="315" y="288" fill="#e8630a">1</text>
+    <text x="425" y="288" fill="#e8630a">1</text><text x="535" y="288" fill="#e8630a">1</text>
+    <text x="645" y="288" fill="#1d6fd8">0</text><text x="755" y="288" fill="#e8630a">1</text>
+    <text x="865" y="288" fill="#e8630a">1</text><text x="975" y="288" fill="#e8630a">1</text>
+  </g>
+  <text x="590" y="348" text-anchor="middle" font-size="26" fill="#1f2937">8 bit = 1 <tspan font-weight="700">byte</tspan> · 01110111 in binario = <tspan font-weight="700">119</tspan> · scritto in esadecimale: <tspan font-weight="700" fill="#e8630a">0x77</tspan></text>
+  <text x="590" y="386" text-anchor="middle" font-size="20" font-style="italic" fill="#5b6475">tenetelo a mente: 0x77 tornerà fra poco</text>
+</svg>

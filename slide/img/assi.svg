@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 600" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Gli assi X, Y, Z sul razzo e la rotazione misurata dal giroscopio</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0b1d3a"/>
+    </marker>
+    <marker id="v" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2a9d50"/>
+    </marker>
+  </defs>
+
+  <!-- razzo -->
+  <path d="M260,60 Q322,110 322,150 H198 Q198,110 260,60 Z" fill="#ffd8bf" stroke="#7d8aa0" stroke-width="2"/>
+  <rect x="198" y="150" width="124" height="330" rx="10" fill="#dbeaf8" stroke="#7d8aa0" stroke-width="2"/>
+  <path d="M198,410 L140,520 L198,490 Z M322,410 L380,520 L322,490 Z" fill="#c5ccd6" stroke="#7d8aa0" stroke-width="2"/>
+  <rect x="244" y="480" width="32" height="22" fill="#9aa5b4"/>
+  <rect x="322" y="300" width="34" height="64" rx="6" fill="#ff7a1a"/>
+
+  <!-- rotazione attorno a Z -->
+  <path d="M175,232 A85,20 0 1 0 345,232" fill="none" stroke="#2a9d50" stroke-width="5" marker-end="url(#v)"/>
+  <path d="M345,226 A85,20 0 0 0 175,226" fill="none" stroke="#2a9d50" stroke-width="3" stroke-dasharray="6 6"/>
+  <text x="372" y="226" font-size="22" font-weight="700" fill="#2a9d50">gira su</text>
+  <text x="372" y="252" font-size="22" font-weight="700" fill="#2a9d50">se stesso</text>
+
+  <!-- assi -->
+  <g stroke="#0b1d3a" stroke-width="5" marker-end="url(#a)">
+    <line x1="260" y1="340" x2="260" y2="24"/>
+    <line x1="260" y1="340" x2="500" y2="340"/>
+    <line x1="260" y1="340" x2="120" y2="430"/>
+  </g>
+  <circle cx="260" cy="340" r="8" fill="#0b1d3a"/>
+  <g font-size="34" font-weight="800" fill="#0b1d3a">
+    <text x="276" y="40">Z</text>
+    <text x="508" y="352">X</text>
+    <text x="84" y="452">Y</text>
+  </g>
+  <text x="276" y="72" font-size="20" fill="#5b6475">lungo il razzo</text>
+  <text x="420" y="390" font-size="18" fill="#e8630a">pod</text>
+  <line x1="418" y1="384" x2="360" y2="350" stroke="#e8630a" stroke-width="1.5"/>
+  <text x="280" y="580" text-anchor="middle" font-size="20" fill="#1f2937">3 accelerometri + 3 giroscopi in un chip</text>
+</svg>
